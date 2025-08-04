@@ -51,6 +51,11 @@ class TennisGame {
         this.gameEnded = false;
         this.winner = null;
         
+        // Point scoring delay system
+        this.isScoreDelay = false;
+        this.scoreDelayDuration = 1500; // 1.5 seconds delay
+        this.lastScorer = null; // 'player' or 'copilot' - determines serve direction
+        
         // Animation properties
         this.animationState = 'none'; // 'victory', 'defeat', 'none'
         this.animationFrame = 0;
@@ -413,6 +418,41 @@ class TennisGame {
     
     // Removed complex resetBallState function - keeping it simple
     
+    // Handle scoring delay and ball reset after a point
+    triggerScoreDelay(scorer) {
+        this.isScoreDelay = true;
+        this.lastScorer = scorer;
+        
+        // Use setTimeout to handle the delay
+        setTimeout(() => {
+            this.restartAfterScore();
+        }, this.scoreDelayDuration);
+    }
+    
+    restartAfterScore() {
+        if (this.gameEnded) {
+            this.isScoreDelay = false;
+            return;
+        }
+        
+        // Reset ball to center
+        this.ball.x = this.width / 2;
+        this.ball.y = this.height / 2;
+        
+        // Serve ball towards the side of the player who didn't score
+        if (this.lastScorer === 'player') {
+            // Player scored, serve towards copilot (upward)
+            this.ball.speedX = (Math.random() * 2 + 2) * (Math.random() > 0.5 ? 1 : -1);
+            this.ball.speedY = -(Math.random() * 2 + 2); // Negative = upward
+        } else {
+            // Copilot scored, serve towards player (downward)
+            this.ball.speedX = (Math.random() * 2 + 2) * (Math.random() > 0.5 ? 1 : -1);
+            this.ball.speedY = Math.random() * 2 + 2; // Positive = downward
+        }
+        
+        this.isScoreDelay = false;
+    }
+    
     // Removed complex handleOutOfBounds function - keeping it simple
     
     checkWinCondition() {
@@ -560,7 +600,7 @@ class TennisGame {
             }
         }
         
-        if (!this.gameRunning) return;
+        if (!this.gameRunning || this.isScoreDelay) return;
         
         // Player paddle controls (bottom paddle - horizontal and vertical movement)
         // Constrain paddle to court boundaries
@@ -611,9 +651,7 @@ class TennisGame {
             this.checkWinCondition();
             
             if (!this.gameEnded) {
-                this.ball.x = this.width / 2;
-                this.ball.y = this.height / 2;
-                this.resetBallSpeed();
+                this.triggerScoreDelay('player');
             }
         } else if (this.ball.y >= this.height - this.ball.height) {
             // Ball hit bottom wall - Player missed, Copilot scores
@@ -622,9 +660,7 @@ class TennisGame {
             this.checkWinCondition();
             
             if (!this.gameEnded) {
-                this.ball.x = this.width / 2;
-                this.ball.y = this.height / 2;
-                this.resetBallSpeed();
+                this.triggerScoreDelay('copilot');
             }
         }
         

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BNP Tennis Game</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="game-header">
+            <h1>Ace 2 Ace</h1>
+            <div class="difficulty-selector">
+                <label for="difficultySelect">Difficulty:</label>
+                <select id="difficultySelect">
+                    <option value="beginner">Beginner</option>
+                    <option value="advanced">Advanced</option>
+                    <option value="expert">Expert</option>
+                </select>
+            </div>
+            <div class="score-display">
+                <span id="copilot-score">Copilot: 0</span>
+                <span class="score-separator">|</span>
+                <span id="player-score">Player: 0</span>
+            </div>
+        </div>
+        
+        <div class="game-container">
+            <canvas id="gameCanvas" width="600" height="800"></canvas>
+        </div>
+        
+        <div class="controls">
+            <p>Use ← → ↑ ↓ arrow keys to control your paddle</p>
+            <p class="control-hint">💡 Click on the court or press SPACEBAR to start/pause the game</p>
+            <div class="game-controls">
+                <button id="startBtn">Start Game</button>
+                <button id="pauseBtn">Pause</button>
+                <button id="newGameBtn">New Game</button>
+                <button id="playerNameBtn">Change Player Name</button>
+                <button id="muteBtn" title="Toggle sound">🔊</button>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="./main.js"></script>
+</body>
+</html>

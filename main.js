@@ -16,31 +16,49 @@ class TennisGame {
         // Difficulty configurations
         this.difficultySettings = {
             beginner: {
-                ballSpeed: { x: 2, y: 1.5 },
-                ballMaxSpeed: 4,
-                ballSpeedIncrease: 1.01,
+                ballSpeed: { x: 1, y: 0.8 },        // Much slower for beginners
+                ballMaxSpeed: 2.5,                  // Reduced max speed
+                ballSpeedIncrease: 1.005,           // Very gradual speed increase
                 aiSpeed: 2,
                 aiReaction: 0.5,
                 aiDeadZone: 30,
-                paddleYVariation: 4
+                paddleYVariation: 4,
+                // Enhanced AI movement properties for realistic gameplay
+                aiVerticalReaction: 0.3,     // Slower vertical reaction
+                aiVerticalDeadZone: 40,      // Larger dead zone for Y movement
+                aiSmoothingFactor: 0.15,     // Low smoothing for natural movement
+                aiEasingFactor: 0.03,        // Very slow easing for human-like delays
+                aiMaxDistanceFromNet: 120    // Stay 120px+ from net (conservative)
             },
             advanced: {
-                ballSpeed: { x: 3, y: 2.5 },
-                ballMaxSpeed: 6,
-                ballSpeedIncrease: 1.03,
+                ballSpeed: { x: 1.5, y: 1.2 },     // Moderate speed
+                ballMaxSpeed: 3.5,                  // Moderate max speed
+                ballSpeedIncrease: 1.01,            // Gradual speed increase
                 aiSpeed: 3,
                 aiReaction: 0.7,
                 aiDeadZone: 20,
-                paddleYVariation: 6
+                paddleYVariation: 6,
+                // Enhanced AI movement properties for realistic gameplay
+                aiVerticalReaction: 0.5,
+                aiVerticalDeadZone: 30,
+                aiSmoothingFactor: 0.25,
+                aiEasingFactor: 0.05,        // Standard easing as requested
+                aiMaxDistanceFromNet: 100    // Stay 100px+ from net
             },
             expert: {
-                ballSpeed: { x: 4.5, y: 3.5 },
-                ballMaxSpeed: 8,
-                ballSpeedIncrease: 1.05,
+                ballSpeed: { x: 2, y: 1.8 },       // Faster but still manageable
+                ballMaxSpeed: 4.5,                  // Reduced from 8 to 4.5
+                ballSpeedIncrease: 1.02,            // More reasonable increase
                 aiSpeed: 4.5,
                 aiReaction: 0.9,
                 aiDeadZone: 10,
-                paddleYVariation: 8
+                paddleYVariation: 8,
+                // Enhanced AI movement properties for realistic gameplay
+                aiVerticalReaction: 0.7,
+                aiVerticalDeadZone: 20,
+                aiSmoothingFactor: 0.35,
+                aiEasingFactor: 0.07,        // Faster easing for expert level
+                aiMaxDistanceFromNet: 80     // More aggressive positioning
             }
         };
         
@@ -80,6 +98,12 @@ class TennisGame {
         this.paddle1 = { x: this.width / 2 - 40, y: 20, width: 80, height: 15, speed: 2 }; // Copilot (top)
         this.paddle2 = { x: this.width / 2 - 40, y: this.height - 35, width: 80, height: 15, speed: 5 }; // Player (bottom)
         
+        // AI paddle tracking for natural movement
+        this.aiTarget = {
+            x: this.width / 2 - 40, // Target X position for AI paddle
+            y: 20                   // Target Y position for AI paddle
+        };
+        
         // Player sprite (attached to paddle2)
         this.playerSprite = {
             width: 40,
@@ -94,9 +118,9 @@ class TennisGame {
             y: this.height / 2, 
             width: 20,
             height: 20,
-            speedX: 3, // Simple horizontal speed
-            speedY: 3, // Simple vertical speed
-            maxSpeed: 8
+            speedX: 1.5, // Reduced default horizontal speed
+            speedY: 1.5, // Reduced default vertical speed
+            maxSpeed: 4  // Reduced default max speed
         };
         
         // Physics and 3D constants
@@ -386,10 +410,29 @@ class TennisGame {
     }
     
     resetBallSpeed() {
-        // Simple Pong-style ball reset
-        const direction = Math.random() > 0.5 ? 1 : -1;
-        this.ball.speedX = (Math.random() * 2 + 2) * direction; // Random speed between 2-4
-        this.ball.speedY = (Math.random() * 2 + 2) * (Math.random() > 0.5 ? 1 : -1); // Random direction
+        // Tennis-style ball reset with safe diagonal trajectory
+        const settings = this.difficultySettings[this.currentDifficulty];
+        
+        // Create safe diagonal trajectory with controlled speeds
+        const horizontalDirection = Math.random() > 0.5 ? 1 : -1;
+        const verticalDirection = Math.random() > 0.5 ? 1 : -1;
+        
+        // Set safe diagonal speeds (within -4 to +4 range for horizontal)
+        this.ball.speedX = Math.max(-3, Math.min(3, 
+            (settings.ballSpeed.x + Math.random() * 0.5) * horizontalDirection
+        ));
+        this.ball.speedY = (settings.ballSpeed.y + Math.random() * 0.5) * verticalDirection;
+        
+        // Ensure minimum movement for continuous gameplay
+        if (Math.abs(this.ball.speedX) < 0.8) {
+            this.ball.speedX = 0.8 * Math.sign(this.ball.speedX || 1);
+        }
+        if (Math.abs(this.ball.speedY) < 0.8) {
+            this.ball.speedY = 0.8 * Math.sign(this.ball.speedY || 1);
+        }
+        
+        // Update max speed based on difficulty
+        this.ball.maxSpeed = settings.ballMaxSpeed;
     }
     
     // Removed complex updateBallVisualSize function - keeping it simple
@@ -397,20 +440,88 @@ class TennisGame {
     // Removed complex triggerBallImpact function - keeping it simple
     
     hitBallWithPaddle(paddle, isTopPaddle = false) {
-        // Simple Pong-style paddle hit
-        this.ball.speedY = -this.ball.speedY; // Reverse vertical direction
-        
-        // Add some horizontal variation based on where the ball hits the paddle
+        // Smart tennis-style paddle hit with fair trajectory calculation
         const hitPos = (this.ball.x + this.ball.width/2 - paddle.x) / paddle.width; // 0 to 1
-        this.ball.speedX += (hitPos - 0.5) * 3; // Add spin based on hit position
+        const settings = this.difficultySettings[this.currentDifficulty];
         
-        // Limit max speed
-        if (Math.abs(this.ball.speedX) > this.ball.maxSpeed) {
-            this.ball.speedX = this.ball.maxSpeed * Math.sign(this.ball.speedX);
+        // Get opponent paddle for position awareness
+        const opponentPaddle = isTopPaddle ? this.paddle2 : this.paddle1;
+        const opponentCenterX = opponentPaddle.x + opponentPaddle.width / 2;
+        
+        // Calculate safe target area on opponent's side
+        const courtLeftSafe = this.courtBounds.left + 40; // 40px margin from sideline
+        const courtRightSafe = this.courtBounds.right - 40; // 40px margin from sideline
+        const safeTargetWidth = courtRightSafe - courtLeftSafe;
+        
+        // Calculate horizontal direction with opponent awareness
+        let targetX;
+        
+        // Base target calculation from hit position
+        const baseTargetX = courtLeftSafe + (hitPos * safeTargetWidth);
+        
+        // Adjust target to avoid extreme corners if opponent is already at edge
+        if (opponentCenterX < this.width * 0.3) {
+            // Opponent is on the left, favor center-right shots
+            targetX = Math.max(baseTargetX, this.width * 0.4);
+        } else if (opponentCenterX > this.width * 0.7) {
+            // Opponent is on the right, favor center-left shots
+            targetX = Math.min(baseTargetX, this.width * 0.6);
+        } else {
+            // Opponent is center, use normal targeting
+            targetX = baseTargetX;
         }
-        if (Math.abs(this.ball.speedY) > this.ball.maxSpeed) {
-            this.ball.speedY = this.ball.maxSpeed * Math.sign(this.ball.speedY);
+        
+        // Calculate trajectory to reach target
+        const ballCurrentX = this.ball.x + this.ball.width / 2;
+        const horizontalDistance = targetX - ballCurrentX;
+        
+        // Estimate trajectory time to opponent's side
+        const verticalDistance = isTopPaddle ? 
+            (this.netPosition + 50) - this.ball.y : // AI to player area
+            this.ball.y - (this.netPosition - 50);   // Player to AI area
+        
+        const trajectoryTime = Math.max(20, Math.abs(verticalDistance / 2)); // Minimum 20 frames
+        
+        // Calculate required speeds
+        let targetSpeedX = horizontalDistance / trajectoryTime;
+        let targetSpeedY = isTopPaddle ? 
+            Math.abs(verticalDistance / trajectoryTime) : // Positive for downward
+            -Math.abs(verticalDistance / trajectoryTime);  // Negative for upward
+        
+        // Apply safe horizontal speed limits (-4 to +4 as requested)
+        targetSpeedX = Math.max(-4, Math.min(4, targetSpeedX));
+        
+        // Ensure good vertical speed for proper trajectory
+        const minVerticalSpeed = 1.2;
+        const maxVerticalSpeed = settings.ballMaxSpeed * 0.8;
+        
+        if (isTopPaddle) {
+            // AI paddle - ensure downward movement
+            targetSpeedY = Math.max(minVerticalSpeed, Math.min(maxVerticalSpeed, Math.abs(targetSpeedY)));
+        } else {
+            // Player paddle - ensure upward movement
+            targetSpeedY = -Math.max(minVerticalSpeed, Math.min(maxVerticalSpeed, Math.abs(targetSpeedY)));
         }
+        
+        // Add controlled randomness for unpredictability (smaller variation for fairness)
+        const randomFactorX = (Math.random() - 0.5) * 0.8; // ±0.4 variation
+        const randomFactorY = (Math.random() - 0.5) * 0.6; // ±0.3 variation
+        
+        targetSpeedX += randomFactorX;
+        targetSpeedY += randomFactorY * (isTopPaddle ? 1 : -1);
+        
+        // Final safety clamps
+        targetSpeedX = Math.max(-4, Math.min(4, targetSpeedX)); // Hard limit as requested
+        
+        if (isTopPaddle) {
+            targetSpeedY = Math.max(0.8, Math.min(settings.ballMaxSpeed, targetSpeedY));
+        } else {
+            targetSpeedY = Math.max(-settings.ballMaxSpeed, Math.min(-0.8, targetSpeedY));
+        }
+        
+        // Apply the calculated trajectory
+        this.ball.speedX = targetSpeedX;
+        this.ball.speedY = targetSpeedY;
         
         // Play tennis ball hit sound
         this.playBallHitSound();
@@ -439,15 +550,33 @@ class TennisGame {
         this.ball.x = this.width / 2;
         this.ball.y = this.height / 2;
         
-        // Serve ball towards the side of the player who didn't score
+        // Get current difficulty settings
+        const settings = this.difficultySettings[this.currentDifficulty];
+        const baseSpeedX = settings.ballSpeed.x;
+        const baseSpeedY = settings.ballSpeed.y;
+        
+        // Serve ball in a safe diagonal trajectory towards the opponent
+        // Use controlled horizontal speed within safe range
+        const safeHorizontalSpeed = Math.max(-3, Math.min(3, 
+            (baseSpeedX + Math.random() * 0.5) * (Math.random() > 0.5 ? 1 : -1)
+        ));
+        
         if (this.lastScorer === 'player') {
-            // Player scored, serve towards copilot (upward)
-            this.ball.speedX = (Math.random() * 2 + 2) * (Math.random() > 0.5 ? 1 : -1);
-            this.ball.speedY = -(Math.random() * 2 + 2); // Negative = upward
+            // Player scored, serve towards copilot (upward diagonal)
+            this.ball.speedX = safeHorizontalSpeed;
+            this.ball.speedY = -(baseSpeedY + Math.random() * 0.5); // Negative = upward
         } else {
-            // Copilot scored, serve towards player (downward)
-            this.ball.speedX = (Math.random() * 2 + 2) * (Math.random() > 0.5 ? 1 : -1);
-            this.ball.speedY = Math.random() * 2 + 2; // Positive = downward
+            // Copilot scored, serve towards player (downward diagonal)
+            this.ball.speedX = safeHorizontalSpeed;
+            this.ball.speedY = baseSpeedY + Math.random() * 0.5; // Positive = downward
+        }
+        
+        // Ensure minimum diagonal movement
+        if (Math.abs(this.ball.speedX) < 0.8) {
+            this.ball.speedX = 0.8 * Math.sign(this.ball.speedX);
+        }
+        if (Math.abs(this.ball.speedY) < 0.8) {
+            this.ball.speedY = 0.8 * Math.sign(this.ball.speedY);
         }
         
         this.isScoreDelay = false;
@@ -559,6 +688,10 @@ class TennisGame {
         this.paddle1.x = this.width / 2 - this.paddle1.width / 2; // Copilot centered at top
         this.paddle2.x = this.width / 2 - this.paddle2.width / 2; // Player centered at bottom
         
+        // Reset AI target position
+        this.aiTarget.x = this.paddle1.x;
+        this.aiTarget.y = this.paddle1.y;
+        
         // Reset player sprite position
         this.updatePlayerSpritePosition();
         
@@ -625,27 +758,73 @@ class TennisGame {
         // Update player sprite position to follow paddle
         this.updatePlayerSpritePosition();
         
-        // AI paddle (Copilot) - horizontal movement following ball
+        // Enhanced AI paddle (Copilot) - Realistic movement with human-like constraints
         const settings = this.difficultySettings[this.currentDifficulty];
-        const paddle1Center = this.paddle1.x + this.paddle1.width / 2;
-        const ballCenter = this.ball.x + this.ball.width / 2;
-        const diff = ballCenter - paddle1Center;
         
-        if (Math.abs(diff) > settings.aiDeadZone) {
-            if (diff > 0 && this.paddle1.x < this.width - this.paddle1.width) {
-                this.paddle1.x += this.paddle1.speed * settings.aiReaction;
-            } else if (diff < 0 && this.paddle1.x > 0) {
-                this.paddle1.x -= this.paddle1.speed * settings.aiReaction;
-            }
+        // Define AI positioning limits - stay well behind the net
+        const aiMinY = this.courtBounds.top; // Top court boundary
+        const aiMaxY = this.netPosition - settings.aiMaxDistanceFromNet; // Stay distance from net
+        
+        // Calculate target positions with ball prediction
+        const ballCenterX = this.ball.x + this.ball.width / 2;
+        const ballCenterY = this.ball.y + this.ball.height / 2;
+        
+        // Horizontal tracking with prediction (more responsive)
+        let targetX = ballCenterX - this.paddle1.width / 2;
+        
+        // Add prediction based on ball movement for more realistic play
+        if (Math.abs(this.ball.speedX) > 1) {
+            const predictionFrames = 8; // Look ahead 8 frames
+            const predictedBallX = this.ball.x + (this.ball.speedX * predictionFrames);
+            targetX = predictedBallX - this.paddle1.width / 2;
         }
         
-        // Simple Pong-style Ball Physics
+        // Vertical positioning - defensive strategy with constraints
+        let targetY = this.aiTarget.y; // Start with current target
+        
+        // Only move vertically if ball is approaching and within reasonable range
+        if (this.ball.speedY < 0 && ballCenterY < this.netPosition) {
+            // Ball is moving toward AI side - calculate defensive position
+            const optimalDefenseY = Math.max(aiMinY, ballCenterY - 60); // Stay 60px above ball
+            targetY = Math.min(optimalDefenseY, aiMaxY); // Clamp to max distance from net
+        } else {
+            // Ball moving away or on player side - maintain conservative position
+            const conservativeY = aiMinY + 40; // Stay near top of court
+            targetY = conservativeY;
+        }
+        
+        // Apply human-like easing to target positions (smooth reaction delays)
+        this.aiTarget.x += (targetX - this.aiTarget.x) * settings.aiEasingFactor;
+        this.aiTarget.y += (targetY - this.aiTarget.y) * settings.aiEasingFactor * 0.7; // Slower Y easing
+        
+        // Constrain AI target within boundaries
+        this.aiTarget.x = Math.max(0, Math.min(this.width - this.paddle1.width, this.aiTarget.x));
+        this.aiTarget.y = Math.max(aiMinY, Math.min(aiMaxY, this.aiTarget.y));
+        
+        // Move paddle toward target with human-like delays and imperfection
+        const xDiff = this.aiTarget.x - this.paddle1.x;
+        const yDiff = this.aiTarget.y - this.paddle1.y;
+        
+        // Apply movement only if difference is significant (dead zone simulation)
+        if (Math.abs(xDiff) > 2) {
+            this.paddle1.x += xDiff * settings.aiSmoothingFactor * settings.aiReaction;
+        }
+        
+        if (Math.abs(yDiff) > 3) {
+            this.paddle1.y += yDiff * settings.aiSmoothingFactor * settings.aiVerticalReaction * 0.8;
+        }
+        
+        // Final boundary enforcement for paddle position
+        this.paddle1.x = Math.max(0, Math.min(this.width - this.paddle1.width, this.paddle1.x));
+        this.paddle1.y = Math.max(aiMinY, Math.min(aiMaxY, this.paddle1.y));
+        
+        // Tennis-style Ball Physics - Diagonal trajectories
         this.ball.x += this.ball.speedX;
         this.ball.y += this.ball.speedY;
         
-        // Ball collision with top and bottom walls (canvas boundaries)
-        if (this.ball.y <= 0) {
-            // Ball hit top wall - Copilot missed, Player scores
+        // Check if ball goes out of bounds (scoring)
+        if (this.ball.y <= -20) {
+            // Ball went off top - Copilot missed, Player scores
             this.playerScore++;
             this.updateScoreDisplay();
             this.checkWinCondition();
@@ -653,8 +832,8 @@ class TennisGame {
             if (!this.gameEnded) {
                 this.triggerScoreDelay('player');
             }
-        } else if (this.ball.y >= this.height - this.ball.height) {
-            // Ball hit bottom wall - Player missed, Copilot scores
+        } else if (this.ball.y >= this.height + 20) {
+            // Ball went off bottom - Player missed, Copilot scores
             this.copilotScore++;
             this.updateScoreDisplay();
             this.checkWinCondition();
@@ -662,12 +841,27 @@ class TennisGame {
             if (!this.gameEnded) {
                 this.triggerScoreDelay('copilot');
             }
-        }
-        
-        // Ball collision with left and right walls
-        if (this.ball.x <= 0 || this.ball.x >= this.width - this.ball.width) {
-            this.ball.speedX = -this.ball.speedX;
-            this.ball.x = Math.max(0, Math.min(this.width - this.ball.width, this.ball.x));
+        } else if (this.ball.x <= -20 || this.ball.x >= this.width + 20) {
+            // Ball went off sides - Point goes to last player who hit it
+            // For now, alternate scoring or use a simple rule
+            if (Math.abs(this.ball.speedY) > Math.abs(this.ball.speedX)) {
+                // Ball was moving more vertically, likely a missed return
+                if (this.ball.y < this.height / 2) {
+                    // Ball was in upper half, Copilot missed
+                    this.playerScore++;
+                    if (!this.gameEnded) {
+                        this.triggerScoreDelay('player');
+                    }
+                } else {
+                    // Ball was in lower half, Player missed
+                    this.copilotScore++;
+                    if (!this.gameEnded) {
+                        this.triggerScoreDelay('copilot');
+                    }
+                }
+                this.updateScoreDisplay();
+                this.checkWinCondition();
+            }
         }
         
         // Simple Paddle collision detection

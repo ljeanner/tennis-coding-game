@@ -888,25 +888,39 @@ class TennisGame {
         // Position the player sprite below the paddle
         this.playerSprite.y = this.paddle2.y + this.paddle2.height + this.playerSprite.offsetY;
         
-        // Allow sprite to extend beyond canvas bounds - calculate additional offset based on paddle position
+        // Keep sprite visible within canvas bounds while allowing paddle to move to edges
+        const spriteMinX = 0; // Minimum X to keep sprite visible
+        const spriteMaxX = this.width - this.playerSprite.width; // Maximum X to keep sprite visible
+        
+        // Clamp sprite position to stay within canvas bounds
+        this.playerSprite.x = Math.max(spriteMinX, Math.min(spriteMaxX, this.playerSprite.x));
+        
+        // Allow sprite to extend beyond court bounds but stay within canvas bounds
         const paddleDistanceFromCourt = {
             left: Math.max(0, this.courtBounds.left - this.paddle2.x),
             right: Math.max(0, this.paddle2.x + this.paddle2.width - this.courtBounds.right),
             bottom: Math.max(0, this.paddle2.y + this.paddle2.height - this.courtBounds.bottom)
         };
         
-        // Allow sprite to move into border areas
+        // Allow sprite to move into border areas but keep within canvas
         if (paddleDistanceFromCourt.left > 0) {
-            this.playerSprite.x -= paddleDistanceFromCourt.left * 0.5; // Sprite extends further left
+            // Paddle is beyond left court boundary - adjust sprite but keep it visible
+            const leftAdjustment = paddleDistanceFromCourt.left * 0.5;
+            this.playerSprite.x = Math.max(spriteMinX, this.playerSprite.x - leftAdjustment);
         }
         if (paddleDistanceFromCourt.right > 0) {
-            this.playerSprite.x += paddleDistanceFromCourt.right * 0.5; // Sprite extends further right
+            // Paddle is beyond right court boundary - adjust sprite but keep it visible
+            const rightAdjustment = paddleDistanceFromCourt.right * 0.5;
+            this.playerSprite.x = Math.min(spriteMaxX, this.playerSprite.x + rightAdjustment);
         }
         if (paddleDistanceFromCourt.bottom > 0) {
-            this.playerSprite.y += paddleDistanceFromCourt.bottom * 0.3; // Sprite extends further down
+            // Allow sprite to extend further down when paddle is at bottom
+            this.playerSprite.y += paddleDistanceFromCourt.bottom * 0.3;
         }
         
-        // No canvas boundary constraints for sprite - allow it to go beyond canvas
+        // Final safety check - ensure sprite stays within canvas bounds
+        this.playerSprite.x = Math.max(spriteMinX, Math.min(spriteMaxX, this.playerSprite.x));
+        this.playerSprite.y = Math.max(0, Math.min(this.height - this.playerSprite.height, this.playerSprite.y));
     }
     
     checkCollision(rect1, rect2) {

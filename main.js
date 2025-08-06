@@ -736,16 +736,16 @@ class TennisGame {
         if (!this.gameRunning || this.isScoreDelay) return;
         
         // Player paddle controls (bottom paddle - horizontal and vertical movement)
-        // Constrain paddle to court boundaries
-        const courtLeft = this.courtBounds.left;
-        const courtRight = this.courtBounds.right - this.paddle2.width;
+        // Allow player to move across the full canvas width, but constrain vertically to stay below net
+        const canvasLeft = 0; // Allow movement to canvas edge
+        const canvasRight = this.width - this.paddle2.width; // Allow movement to canvas edge
         const courtTop = this.netPosition + 10; // Stay below net
         const courtBottom = this.courtBounds.bottom - this.paddle2.height;
         
-        if (this.keys['ArrowLeft'] && this.paddle2.x > courtLeft) {
+        if (this.keys['ArrowLeft'] && this.paddle2.x > canvasLeft) {
             this.paddle2.x -= this.paddle2.speed;
         }
-        if (this.keys['ArrowRight'] && this.paddle2.x < courtRight) {
+        if (this.keys['ArrowRight'] && this.paddle2.x < canvasRight) {
             this.paddle2.x += this.paddle2.speed;
         }
         if (this.keys['ArrowUp'] && this.paddle2.y > courtTop) {

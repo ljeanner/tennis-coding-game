@@ -22,6 +22,19 @@ body {
     width: 100%;
 }
 
+#debug-info {
+    background: #000;
+    color: #0f0;
+    padding: 10px;
+    margin: 10px;
+    font-family: monospace;
+    font-size: 12px;
+    border-radius: 4px;
+    max-width: 90%;
+    word-wrap: break-word;
+    text-align: left;
+}
+
 .game-header {
     margin-bottom: 20px;
 }
@@ -108,6 +121,18 @@ body {
     image-rendering: crisp-edges;
     transition: all 0.3s ease;
     user-select: none;
+    /* iOS Safari canvas rendering fixes */
+    -webkit-transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    /* Force visibility for iOS debugging */
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    background-color: #ff0000 !important;
+    min-height: 200px !important;
+    min-width: 200px !important;
 }
 
 #gameCanvas:hover {
@@ -279,5 +304,34 @@ body {
         font-size: 0.9rem;
         margin: 5px 0;
         min-width: 140px;
+    }
+    
+    /* iOS specific smaller canvas styling */
+    .game-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 10px;
+    }
+    
+    #gameCanvas {
+        max-width: 100vw;
+        max-height: 70vh;
+        border: 20px solid #d36c24;
+        border-radius: 4px;
+    }
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+    #gameCanvas {
+        -webkit-transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0);
+        -webkit-perspective: 1000px;
+        perspective: 1000px;
+        will-change: transform;
+        /* Force hardware acceleration */
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
     }
 }

@@ -3,8 +3,47 @@ class TennisGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        this.width = 600;
-        this.height = 800;
+        
+        // Debug info element
+        this.debugInfo = document.getElementById('debug-info');
+        
+        // iOS Safari compatibility - use even smaller canvas dimensions
+        this.isIOSSafari = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (this.isIOSSafari) {
+            // Very small iOS Safari safe canvas dimensions
+            this.width = 320;
+            this.height = 480;
+            this.updateDebug(`📱 iOS Safari detected - using ultra-safe canvas: ${this.width}x${this.height}`);
+        } else if (this.isMobile) {
+            // Small mobile dimensions for other mobile devices
+            this.width = 400;
+            this.height = 600;
+            this.updateDebug(`📱 Mobile detected - using small canvas: ${this.width}x${this.height}`);
+        } else {
+            // Desktop - use larger canvas
+            this.width = 600;
+            this.height = 800;
+            this.updateDebug(`🖥️ Desktop - using full canvas: ${this.width}x${this.height}`);
+        }
+        
+        // Force apply canvas dimensions immediately
+        this.canvas.width = this.width;
+        this.canvas.height = this.height;
+        this.canvas.style.width = this.width + 'px';
+        this.canvas.style.height = this.height + 'px';
+        
+        // Force canvas to be visible with bright background
+        this.canvas.style.backgroundColor = '#ff0000'; // Red background for debugging
+        this.canvas.style.display = 'block';
+        this.canvas.style.visibility = 'visible';
+        this.canvas.style.opacity = '1';
+        
+        this.canvasReady = true;
+        
+        // Test canvas immediately
+        this.testCanvas();
         
         // Game state
         this.gameRunning = false;
@@ -143,7 +182,43 @@ class TennisGame {
         this.init();
     }
     
+    updateDebug(message) {
+        console.log(message);
+        if (this.debugInfo) {
+            const timestamp = new Date().toLocaleTimeString();
+            this.debugInfo.innerHTML += `<br>[${timestamp}] ${message}`;
+        }
+    }
+    
+    testCanvas() {
+        this.updateDebug(`🔍 Testing canvas element...`);
+        this.updateDebug(`Canvas element: ${this.canvas ? 'Found' : 'NOT FOUND'}`);
+        this.updateDebug(`Canvas context: ${this.ctx ? 'OK' : 'FAILED'}`);
+        this.updateDebug(`Canvas dimensions: ${this.canvas.width}x${this.canvas.height}`);
+        this.updateDebug(`Canvas style: ${this.canvas.style.width} x ${this.canvas.style.height}`);
+        this.updateDebug(`Screen size: ${window.innerWidth}x${window.innerHeight}`);
+        this.updateDebug(`User agent: ${navigator.userAgent}`);
+        this.updateDebug(`iOS Safari: ${this.isIOSSafari}`);
+        
+        // Test drawing on canvas
+        try {
+            this.ctx.fillStyle = '#00ff00';
+            this.ctx.fillRect(0, 0, 50, 50);
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.fillText('TEST', 10, 30);
+            this.updateDebug(`✅ Canvas drawing test: SUCCESS`);
+        } catch (error) {
+            this.updateDebug(`❌ Canvas drawing test: ${error.message}`);
+        }
+    }
+    
     async init() {
+        this.updateDebug(`🎮 Initializing tennis game with canvas: ${this.width}x${this.height}`);
+        
+        // Force canvas visibility again
+        this.canvas.style.border = '3px solid #ff0000';
+        this.canvas.style.backgroundColor = '#ffff00';
+        
         await this.loadImages();
         await this.loadAudio();
         this.setupEventListeners();
@@ -151,6 +226,8 @@ class TennisGame {
         this.applyDifficultySettings(); // Apply initial difficulty
         this.resetGame();
         this.updateButtonStates();
+        
+        this.updateDebug(`✅ Game initialization complete`);
         this.gameLoop();
     }
     

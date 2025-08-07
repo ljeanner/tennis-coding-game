@@ -2,9 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>BNP Tennis Game</title>
     <link rel="stylesheet" href="./style.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-size@2"></script>
 </head>
 <body>
     <div class="container">
@@ -26,7 +29,11 @@
         </div>
         
         <div class="game-container">
-            <canvas id="gameCanvas" width="600" height="800"></canvas>
+            <canvas id="gameCanvas" width="320" height="480"></canvas>
+        </div>
+        
+        <div id="debug-info">
+            Loading debug info...
         </div>
         
         <div class="controls">

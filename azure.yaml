@@ -1,0 +1,11 @@
+name: bnpp-tennis-game
+metadata:
+  template: bnpp-tennis-game@0.0.1-beta
+infra:
+  provider: bicep
+services:
+  web:
+    project: ./
+    host: staticwebapp
+    language: js
+    dist: dist

@@ -16,6 +16,9 @@ build/
 .env.test.local
 .env.production.local
 
+# Azure configuration (contains sensitive data)
+.azure/
+
 # IDE and Editor files
 .vscode/
 .idea/

@@ -156,9 +156,9 @@ class TennisGame {
     
     async loadImages() {
         const imageFiles = {
-            court: './assets/court3.png',
-            ball: './assets/ball.png',
-            playerBack: './assets/player_back.png'
+            court: '/court3.png',
+            ball: '/ball.png',
+            playerBack: '/player_back.png'
         };
         
         const loadPromises = Object.entries(imageFiles).map(([key, src]) => {
@@ -191,7 +191,7 @@ class TennisGame {
     
     async loadAudio() {
         const audioFiles = {
-            ballHit: './assets/ball-hit.mp3'
+            ballHit: '/ball-hit.mp3'
         };
         
         const loadPromises = Object.entries(audioFiles).map(([key, src]) => {

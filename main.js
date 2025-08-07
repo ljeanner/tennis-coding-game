@@ -4,9 +4,6 @@ class TennisGame {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
         
-        // Debug info element
-        this.debugInfo = document.getElementById('debug-info');
-        
         // iOS Safari compatibility - use even smaller canvas dimensions
         this.isIOSSafari = /iPad|iPhone|iPod/.test(navigator.userAgent);
         this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -15,17 +12,14 @@ class TennisGame {
             // Very small iOS Safari safe canvas dimensions
             this.width = 320;
             this.height = 480;
-            this.updateDebug(`📱 iOS Safari detected - using ultra-safe canvas: ${this.width}x${this.height}`);
         } else if (this.isMobile) {
             // Small mobile dimensions for other mobile devices
             this.width = 400;
             this.height = 600;
-            this.updateDebug(`📱 Mobile detected - using small canvas: ${this.width}x${this.height}`);
         } else {
             // Desktop - use larger canvas
             this.width = 600;
             this.height = 800;
-            this.updateDebug(`🖥️ Desktop - using full canvas: ${this.width}x${this.height}`);
         }
         
         // Force apply canvas dimensions immediately
@@ -34,16 +28,12 @@ class TennisGame {
         this.canvas.style.width = this.width + 'px';
         this.canvas.style.height = this.height + 'px';
         
-        // Force canvas to be visible with bright background
-        this.canvas.style.backgroundColor = '#ff0000'; // Red background for debugging
+        // Ensure canvas visibility
         this.canvas.style.display = 'block';
         this.canvas.style.visibility = 'visible';
         this.canvas.style.opacity = '1';
         
         this.canvasReady = true;
-        
-        // Test canvas immediately
-        this.testCanvas();
         
         // Game state
         this.gameRunning = false;
@@ -56,7 +46,6 @@ class TennisGame {
         this.touchActive = false;
         this.lastTouchX = 0;
         this.lastTouchY = 0;
-        this.touchIndicator = { x: 0, y: 0, show: false };
         
         // Difficulty configurations
         this.difficultySettings = {
@@ -188,48 +177,7 @@ class TennisGame {
         this.init();
     }
     
-    updateDebug(message) {
-        console.log(message);
-        if (this.debugInfo) {
-            const timestamp = new Date().toLocaleTimeString();
-            this.debugInfo.innerHTML += `<br>[${timestamp}] ${message}`;
-        }
-    }
-    
-    testCanvas() {
-        this.updateDebug(`🔍 Testing canvas element...`);
-        this.updateDebug(`Canvas element: ${this.canvas ? 'Found' : 'NOT FOUND'}`);
-        this.updateDebug(`Canvas context: ${this.ctx ? 'OK' : 'FAILED'}`);
-        this.updateDebug(`Canvas dimensions: ${this.canvas.width}x${this.canvas.height}`);
-        this.updateDebug(`Canvas style: ${this.canvas.style.width} x ${this.canvas.style.height}`);
-        this.updateDebug(`Screen size: ${window.innerWidth}x${window.innerHeight}`);
-        this.updateDebug(`User agent: ${navigator.userAgent}`);
-        this.updateDebug(`iOS Safari: ${this.isIOSSafari}`);
-        
-        // Test touch capabilities
-        this.updateDebug(`Touch support: ${('ontouchstart' in window) ? 'YES' : 'NO'}`);
-        this.updateDebug(`Touch events: ${('TouchEvent' in window) ? 'YES' : 'NO'}`);
-        this.updateDebug(`Max touch points: ${navigator.maxTouchPoints || 'Unknown'}`);
-        
-        // Test drawing on canvas
-        try {
-            this.ctx.fillStyle = '#00ff00';
-            this.ctx.fillRect(0, 0, 50, 50);
-            this.ctx.fillStyle = '#ffffff';
-            this.ctx.fillText('TEST', 10, 30);
-            this.updateDebug(`✅ Canvas drawing test: SUCCESS`);
-        } catch (error) {
-            this.updateDebug(`❌ Canvas drawing test: ${error.message}`);
-        }
-    }
-    
     async init() {
-        this.updateDebug(`🎮 Initializing tennis game with canvas: ${this.width}x${this.height}`);
-        
-        // Force canvas visibility again
-        this.canvas.style.border = '3px solid #ff0000';
-        this.canvas.style.backgroundColor = '#ffff00';
-        
         await this.loadImages();
         await this.loadAudio();
         this.setupEventListeners();
@@ -238,7 +186,6 @@ class TennisGame {
         this.resetGame();
         this.updateButtonStates();
         
-        this.updateDebug(`✅ Game initialization complete`);
         this.gameLoop();
     }
     
@@ -375,8 +322,6 @@ class TennisGame {
     }
     
     setupTouchControls() {
-        this.updateDebug('🎮 Setting up touch controls for mobile devices');
-        
         // Track touch state
         this.touchActive = false;
         this.lastTouchX = 0;
@@ -394,13 +339,6 @@ class TennisGame {
             // Simple coordinate conversion
             this.lastTouchX = touch.clientX - rect.left;
             this.lastTouchY = touch.clientY - rect.top;
-            
-            // Show touch indicator
-            this.touchIndicator.x = (this.lastTouchX / rect.width) * this.width;
-            this.touchIndicator.y = (this.lastTouchY / rect.height) * this.height;
-            this.touchIndicator.show = true;
-            
-            this.updateDebug(`👆 Touch START at screen: ${this.lastTouchX.toFixed(0)},${this.lastTouchY.toFixed(0)} canvas: ${this.touchIndicator.x.toFixed(0)},${this.touchIndicator.y.toFixed(0)}`);
             
             // Start game on touch if not running
             if (!this.gameRunning && !this.isPaused) {
@@ -426,11 +364,6 @@ class TennisGame {
             const canvasX = (touchX / rect.width) * this.width;
             const canvasY = (touchY / rect.height) * this.height;
             
-            // Update touch indicator
-            this.touchIndicator.x = canvasX;
-            this.touchIndicator.y = canvasY;
-            this.touchIndicator.show = true;
-            
             // Update player paddle (paddle2) - with both horizontal AND vertical movement
             if (this.paddle2) {
                 // Center paddle under finger horizontally
@@ -452,24 +385,18 @@ class TennisGame {
                 this.updatePlayerSpritePosition();
             }
             
-            this.updateDebug(`👆 Touch MOVE: ${touchX.toFixed(0)},${touchY.toFixed(0)} → Canvas: ${canvasX.toFixed(0)},${canvasY.toFixed(0)} → Paddle2: ${this.paddle2 ? this.paddle2.x.toFixed(0) + ',' + this.paddle2.y.toFixed(0) : 'N/A'}`);
-            
         }, { passive: false });
         
         this.canvas.addEventListener('touchend', (e) => {
             e.preventDefault();
             e.stopPropagation();
             this.touchActive = false;
-            this.touchIndicator.show = false;
-            this.updateDebug('👆 Touch END');
         }, { passive: false });
         
         this.canvas.addEventListener('touchcancel', (e) => {
             e.preventDefault();
             e.stopPropagation();
             this.touchActive = false;
-            this.touchIndicator.show = false;
-            this.updateDebug('👆 Touch CANCELLED');
         }, { passive: false });
         
         // Prevent scrolling on the entire body when touching the game
@@ -484,8 +411,6 @@ class TennisGame {
                 e.preventDefault();
             }
         }, { passive: false });
-        
-        this.updateDebug('✅ Touch controls setup complete');
     }
     
     askPlayerName() {
@@ -1299,33 +1224,6 @@ class TennisGame {
             
             this.ctx.font = '20px Courier New';
             this.ctx.fillText('Click here, press SPACEBAR, or use Resume button', this.width / 2, this.height / 2 + 30);
-        }
-        
-        // Draw touch indicator for debugging
-        if (this.touchIndicator.show) {
-            this.ctx.fillStyle = '#ff00ff'; // Bright magenta for visibility
-            this.ctx.strokeStyle = '#ffffff';
-            this.ctx.lineWidth = 3;
-            
-            // Draw a larger circle at touch position for 2D movement
-            this.ctx.beginPath();
-            this.ctx.arc(this.touchIndicator.x, this.touchIndicator.y, 25, 0, 2 * Math.PI);
-            this.ctx.fill();
-            this.ctx.stroke();
-            
-            // Draw crosshair for precise positioning
-            this.ctx.beginPath();
-            this.ctx.moveTo(this.touchIndicator.x - 20, this.touchIndicator.y);
-            this.ctx.lineTo(this.touchIndicator.x + 20, this.touchIndicator.y);
-            this.ctx.moveTo(this.touchIndicator.x, this.touchIndicator.y - 20);
-            this.ctx.lineTo(this.touchIndicator.x, this.touchIndicator.y + 20);
-            this.ctx.stroke();
-            
-            // Add "2D" text to show it's 2D control
-            this.ctx.fillStyle = '#ffffff';
-            this.ctx.font = '12px Courier New';
-            this.ctx.textAlign = 'center';
-            this.ctx.fillText('2D', this.touchIndicator.x, this.touchIndicator.y + 40);
         }
     }
     

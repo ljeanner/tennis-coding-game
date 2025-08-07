@@ -52,6 +52,12 @@ class TennisGame {
         this.playerName = 'Player';
         this.currentDifficulty = 'beginner';
         
+        // Touch control state
+        this.touchActive = false;
+        this.lastTouchX = 0;
+        this.lastTouchY = 0;
+        this.touchIndicator = { x: 0, y: 0, show: false };
+        
         // Difficulty configurations
         this.difficultySettings = {
             beginner: {
@@ -200,6 +206,11 @@ class TennisGame {
         this.updateDebug(`User agent: ${navigator.userAgent}`);
         this.updateDebug(`iOS Safari: ${this.isIOSSafari}`);
         
+        // Test touch capabilities
+        this.updateDebug(`Touch support: ${('ontouchstart' in window) ? 'YES' : 'NO'}`);
+        this.updateDebug(`Touch events: ${('TouchEvent' in window) ? 'YES' : 'NO'}`);
+        this.updateDebug(`Max touch points: ${navigator.maxTouchPoints || 'Unknown'}`);
+        
         // Test drawing on canvas
         try {
             this.ctx.fillStyle = '#00ff00';
@@ -318,6 +329,9 @@ class TennisGame {
         document.addEventListener('keyup', (e) => {
             this.keys[e.key] = false;
         });
+
+        // Touch controls for mobile devices
+        this.setupTouchControls();
         
         // Mouse click on canvas to start/pause game
         this.canvas.addEventListener('click', (e) => {
@@ -358,6 +372,120 @@ class TennisGame {
         document.getElementById('muteBtn').addEventListener('click', () => {
             this.toggleMute();
         });
+    }
+    
+    setupTouchControls() {
+        this.updateDebug('🎮 Setting up touch controls for mobile devices');
+        
+        // Track touch state
+        this.touchActive = false;
+        this.lastTouchX = 0;
+        this.lastTouchY = 0;
+        
+        // Add touch event listeners to canvas
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.touchActive = true;
+            
+            const touch = e.touches[0];
+            const rect = this.canvas.getBoundingClientRect();
+            
+            // Simple coordinate conversion
+            this.lastTouchX = touch.clientX - rect.left;
+            this.lastTouchY = touch.clientY - rect.top;
+            
+            // Show touch indicator
+            this.touchIndicator.x = (this.lastTouchX / rect.width) * this.width;
+            this.touchIndicator.y = (this.lastTouchY / rect.height) * this.height;
+            this.touchIndicator.show = true;
+            
+            this.updateDebug(`👆 Touch START at screen: ${this.lastTouchX.toFixed(0)},${this.lastTouchY.toFixed(0)} canvas: ${this.touchIndicator.x.toFixed(0)},${this.touchIndicator.y.toFixed(0)}`);
+            
+            // Start game on touch if not running
+            if (!this.gameRunning && !this.isPaused) {
+                this.handleGameToggle();
+            }
+        }, { passive: false });
+        
+        this.canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (!this.touchActive) return;
+            
+            const touch = e.touches[0];
+            const rect = this.canvas.getBoundingClientRect();
+            
+            // Get touch position relative to canvas
+            const touchX = touch.clientX - rect.left;
+            const touchY = touch.clientY - rect.top;
+            this.lastTouchX = touchX;
+            
+            // Convert screen coordinates to canvas coordinates
+            const canvasX = (touchX / rect.width) * this.width;
+            const canvasY = (touchY / rect.height) * this.height;
+            
+            // Update touch indicator
+            this.touchIndicator.x = canvasX;
+            this.touchIndicator.y = canvasY;
+            this.touchIndicator.show = true;
+            
+            // Update player paddle (paddle2) - with both horizontal AND vertical movement
+            if (this.paddle2) {
+                // Center paddle under finger horizontally
+                const newPaddleX = canvasX - (this.paddle2.width / 2);
+                // Center paddle under finger vertically
+                const newPaddleY = canvasY - (this.paddle2.height / 2);
+                
+                // Apply horizontal boundaries
+                const canvasLeft = 0;
+                const canvasRight = this.width - this.paddle2.width;
+                this.paddle2.x = Math.max(canvasLeft, Math.min(canvasRight, newPaddleX));
+                
+                // Apply vertical boundaries - keep paddle in bottom half of court
+                const topBoundary = this.height * 0.4; // Can't go above 40% of court height
+                const bottomBoundary = this.height - this.paddle2.height - 20; // Stay 20px from bottom
+                this.paddle2.y = Math.max(topBoundary, Math.min(bottomBoundary, newPaddleY));
+                
+                // Also update the player sprite position to follow the paddle
+                this.updatePlayerSpritePosition();
+            }
+            
+            this.updateDebug(`👆 Touch MOVE: ${touchX.toFixed(0)},${touchY.toFixed(0)} → Canvas: ${canvasX.toFixed(0)},${canvasY.toFixed(0)} → Paddle2: ${this.paddle2 ? this.paddle2.x.toFixed(0) + ',' + this.paddle2.y.toFixed(0) : 'N/A'}`);
+            
+        }, { passive: false });
+        
+        this.canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.touchActive = false;
+            this.touchIndicator.show = false;
+            this.updateDebug('👆 Touch END');
+        }, { passive: false });
+        
+        this.canvas.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.touchActive = false;
+            this.touchIndicator.show = false;
+            this.updateDebug('👆 Touch CANCELLED');
+        }, { passive: false });
+        
+        // Prevent scrolling on the entire body when touching the game
+        document.body.addEventListener('touchstart', (e) => {
+            if (e.target.closest('.container')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        document.body.addEventListener('touchmove', (e) => {
+            if (e.target.closest('.container')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        this.updateDebug('✅ Touch controls setup complete');
     }
     
     askPlayerName() {
@@ -1171,6 +1299,33 @@ class TennisGame {
             
             this.ctx.font = '20px Courier New';
             this.ctx.fillText('Click here, press SPACEBAR, or use Resume button', this.width / 2, this.height / 2 + 30);
+        }
+        
+        // Draw touch indicator for debugging
+        if (this.touchIndicator.show) {
+            this.ctx.fillStyle = '#ff00ff'; // Bright magenta for visibility
+            this.ctx.strokeStyle = '#ffffff';
+            this.ctx.lineWidth = 3;
+            
+            // Draw a larger circle at touch position for 2D movement
+            this.ctx.beginPath();
+            this.ctx.arc(this.touchIndicator.x, this.touchIndicator.y, 25, 0, 2 * Math.PI);
+            this.ctx.fill();
+            this.ctx.stroke();
+            
+            // Draw crosshair for precise positioning
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.touchIndicator.x - 20, this.touchIndicator.y);
+            this.ctx.lineTo(this.touchIndicator.x + 20, this.touchIndicator.y);
+            this.ctx.moveTo(this.touchIndicator.x, this.touchIndicator.y - 20);
+            this.ctx.lineTo(this.touchIndicator.x, this.touchIndicator.y + 20);
+            this.ctx.stroke();
+            
+            // Add "2D" text to show it's 2D control
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.font = '12px Courier New';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('2D', this.touchIndicator.x, this.touchIndicator.y + 40);
         }
     }
     

@@ -20,6 +20,11 @@ body {
     text-align: center;
     max-width: 900px;
     width: 100%;
+    /* Prevent touch scrolling on the game area */
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 #debug-info {
@@ -120,12 +125,15 @@ body {
     image-rendering: -moz-crisp-edges;
     image-rendering: crisp-edges;
     transition: all 0.3s ease;
+    -webkit-user-select: none;
     user-select: none;
     /* iOS Safari canvas rendering fixes */
     -webkit-transform: translateZ(0);
     -webkit-backface-visibility: hidden;
     transform: translateZ(0);
     backface-visibility: hidden;
+    /* Touch controls optimization */
+    touch-action: none;
     /* Force visibility for iOS debugging */
     display: block !important;
     visibility: visible !important;
@@ -149,6 +157,16 @@ body {
     font-size: 1.1rem;
     margin-bottom: 15px;
     color: #ccc;
+}
+
+.desktop-controls {
+    display: block;
+}
+
+.mobile-controls {
+    display: none;
+    color: #00A550 !important;
+    font-weight: bold;
 }
 
 .control-hint {
@@ -294,6 +312,15 @@ body {
         margin-bottom: 8px !important;
     }
     
+    /* Show mobile controls, hide desktop controls */
+    .desktop-controls {
+        display: none;
+    }
+    
+    .mobile-controls {
+        display: block;
+    }
+    
     .game-controls {
         flex-direction: column;
         align-items: center;
@@ -319,6 +346,10 @@ body {
         max-height: 70vh;
         border: 20px solid #d36c24;
         border-radius: 4px;
+        /* Make canvas more touch-friendly */
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
     }
 }
 

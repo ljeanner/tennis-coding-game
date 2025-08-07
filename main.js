@@ -140,8 +140,8 @@ class TennisGame {
         
         // Player sprite (attached to paddle2)
         this.playerSprite = {
-            width: 40,
-            height: 60,
+            width: 50,
+            height: 70,
             offsetY: 5, // Offset below paddle
             offsetX: 0, // Additional horizontal offset for border movement
             x: this.width / 2 - 20, // Will be updated to follow paddle
@@ -150,8 +150,8 @@ class TennisGame {
         this.ball = { 
             x: this.width / 2, 
             y: this.height / 2, 
-            width: 20,
-            height: 20,
+            width: 40,
+            height: 40,
             speedX: 1.5, // Reduced default horizontal speed
             speedY: 1.5, // Reduced default vertical speed
             maxSpeed: 4  // Reduced default max speed
@@ -1119,7 +1119,7 @@ class TennisGame {
             // Add a white highlight
             this.ctx.fillStyle = '#FFFFFF';
             this.ctx.beginPath();
-            this.ctx.arc(centerX - 3, centerY - 3, 3, 0, 2 * Math.PI);
+            this.ctx.arc(centerX - 4, centerY - 4, 4, 0, 2 * Math.PI);
             this.ctx.fill();
         }
         

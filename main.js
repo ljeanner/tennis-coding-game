@@ -114,6 +114,11 @@ class TennisGame {
         this.animationDuration = 180; // 3 seconds at 60fps
         this.confetti = [];
         this.fadeOpacity = 1;
+
+        // Countdown state (pre-game)
+        this.isCountingDown = false;
+        this.countdownText = '';
+        this.countdownTimer = null;
         
         // Images
         this.images = {};
@@ -126,6 +131,10 @@ class TennisGame {
         this.totalAudio = 1;
         this.isMuted = false;
         this.volume = 0.7; // Default volume (0.0 to 1.0)
+        
+        // Web Audio synth fallback
+        this.audioCtx = null;
+        this.audioUnlocked = false;
         
         // Game objects (will be updated based on difficulty)
         // Top-down view: Copilot at top, Player at bottom
@@ -231,7 +240,9 @@ class TennisGame {
     
     async loadAudio() {
         const audioFiles = {
-            ballHit: '/ball-hit.mp3'
+            ballHit: '/ball-hit.mp3',
+            countdownBeep: '/countdown-beep.mp3',
+            countdownGo: '/countdown-go.mp3'
         };
         
         const loadPromises = Object.entries(audioFiles).map(([key, src]) => {
@@ -264,6 +275,9 @@ class TennisGame {
     setupEventListeners() {
         // Keyboard controls
         document.addEventListener('keydown', (e) => {
+            // Unlock audio context on first user gesture
+            this.unlockAudio();
+            
             this.keys[e.key] = true;
             
             // Prevent default behavior for arrow keys and spacebar
@@ -287,6 +301,8 @@ class TennisGame {
         
         // Mouse click on canvas to start/pause game
         this.canvas.addEventListener('click', (e) => {
+            // Unlock on click
+            this.unlockAudio();
             this.handleGameToggle();
         });
         
@@ -306,6 +322,7 @@ class TennisGame {
         
         // Buttons
         document.getElementById('startBtn').addEventListener('click', () => {
+            this.unlockAudio();
             this.startGame();
         });
         
@@ -326,37 +343,41 @@ class TennisGame {
         });
         
         // Start menu interactions
-		if (this.menuStartBtn && this.playerNameInput) {
-			const tryStart = (e) => {
-				if (e) e.preventDefault();
-				this.confirmStartFromMenu();
-			};
-			this.menuStartBtn.addEventListener('click', tryStart);
-			this.menuStartBtn.addEventListener('pointerdown', tryStart, { passive: false });
-			this.menuStartBtn.addEventListener('touchstart', tryStart, { passive: false });
-			this.playerNameInput.addEventListener('keydown', (e) => {
-				if (e.key === 'Enter') {
-					e.preventDefault();
-					this.confirmStartFromMenu();
-				}
-			});
-			// Global Enter fallback while menu visible
-			document.addEventListener('keydown', (e) => {
-				if (e.key === 'Enter' && this.startMenuEl && document.body.contains(this.startMenuEl)) {
-					e.preventDefault();
-					this.confirmStartFromMenu();
-				}
-			});
-			// Autofocus input when overlay present (small timeout for iOS reliability)
-			setTimeout(() => { this.playerNameInput.focus(); }, 50);
-		}
-		
-		if (this.startMenuForm) {
-			this.startMenuForm.addEventListener('submit', (e) => {
-				e.preventDefault();
-				this.confirmStartFromMenu();
-			});
-		}
+        if (this.menuStartBtn && this.playerNameInput) {
+            const tryStart = (e) => {
+                if (e) e.preventDefault();
+                this.unlockAudio();
+                this.confirmStartFromMenu();
+            };
+            this.menuStartBtn.addEventListener('click', tryStart);
+            this.menuStartBtn.addEventListener('pointerdown', tryStart, { passive: false });
+            this.menuStartBtn.addEventListener('touchstart', tryStart, { passive: false });
+            this.playerNameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.unlockAudio();
+                    this.confirmStartFromMenu();
+                }
+            });
+            // Global Enter fallback while menu visible
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && this.startMenuEl && document.body.contains(this.startMenuEl)) {
+                    e.preventDefault();
+                    this.unlockAudio();
+                    this.confirmStartFromMenu();
+                }
+            });
+            // Autofocus input when overlay present (small timeout for iOS reliability)
+            setTimeout(() => { this.playerNameInput.focus(); }, 50);
+        }
+        
+        if (this.startMenuForm) {
+            this.startMenuForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.unlockAudio();
+                this.confirmStartFromMenu();
+            });
+        }
     }
     
     setupTouchControls() {
@@ -370,6 +391,9 @@ class TennisGame {
             e.preventDefault();
             e.stopPropagation();
             this.touchActive = true;
+            
+            // Unlock on first touch
+            this.unlockAudio();
             
             const touch = e.touches[0];
             const rect = this.canvas.getBoundingClientRect();
@@ -517,20 +541,91 @@ class TennisGame {
     }
     
     playBallHitSound() {
-        if (this.isMuted || !this.audio.ballHit) return;
+        // Route to unified sound player with synth fallback
+        this.playSound('ballHit', this.volume);
+    }
+
+    // Generic helper to play an audio clip by key
+    playSound(key, volume = this.volume) {
+        if (this.isMuted) return;
+        const a = this.audio[key];
+        if (a) {
+            try {
+                a.currentTime = 0;
+                a.volume = volume;
+                a.play().catch(() => {});
+                return;
+            } catch {}
+        }
+        // Fallback to synthesized sound when audio file is missing
+        this.synthSound(key, volume);
+    }
+
+    // Web Audio: ensure AudioContext exists
+    ensureAudioContext() {
+        if (!this.audioCtx) {
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            if (Ctx) {
+                this.audioCtx = new Ctx();
+            }
+        }
+        return this.audioCtx;
+    }
+
+    // Try to unlock/resume audio on first user gesture
+    unlockAudio() {
+        if (this.audioUnlocked) return;
+        const ctx = this.ensureAudioContext();
+        if (!ctx) return;
+        if (ctx.state === 'suspended') {
+            ctx.resume().catch(() => {});
+        }
+        this.audioUnlocked = true;
+    }
+
+    // Synthesize short effects for game sounds
+    synthSound(key, volume = this.volume) {
+        const ctx = this.ensureAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const v = Math.max(0.0001, Math.min(1, volume));
         
-        try {
-            // Reset and play the audio
-            this.audio.ballHit.currentTime = 0;
-            this.audio.ballHit.volume = this.volume;
-            this.audio.ballHit.play().catch(e => {
-                console.warn('Could not play ball hit sound:', e);
-            });
-        } catch (e) {
-            console.warn('Error playing ball hit sound:', e);
+        const beep = (freq, dur = 0.1, type = 'sine', start = 0, gain = v) => {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, now + start);
+            g.gain.setValueAtTime(0.0001, now + start);
+            // quick attack then exponential decay
+            g.gain.linearRampToValueAtTime(gain, now + start + 0.01);
+            g.gain.exponentialRampToValueAtTime(0.0001, now + start + dur);
+            osc.connect(g);
+            g.connect(ctx.destination);
+            osc.start(now + start);
+            osc.stop(now + start + dur + 0.02);
+        };
+        
+        switch (key) {
+            case 'ballHit':
+                // Short percussive blip
+                beep(700, 0.05, 'triangle', 0, v * 0.8);
+                break;
+            case 'countdownBeep':
+                // Clear beep
+                beep(880, 0.12, 'sine', 0, v);
+                break;
+            case 'countdownGo':
+                // Two quick rising tones to signal GO!
+                beep(523.25, 0.08, 'square', 0, v);
+                beep(784, 0.14, 'square', 0.09, v);
+                break;
+            default:
+                // Generic soft click
+                beep(440, 0.05, 'sine', 0, v * 0.5);
+                break;
         }
     }
-    
+
     initConfetti() {
         this.confetti = [];
         for (let i = 0; i < 50; i++) {
@@ -575,14 +670,14 @@ class TennisGame {
     }
     
     handleGameToggle() {
+        // Block toggles during countdown
+        if (this.isCountingDown) return;
         if (!this.gameStarted) {
-            // Game hasn't started yet - start it
+            // Start with a short countdown first
             this.startGame();
         } else if (this.gameStarted && !this.isPaused) {
-            // Game is running - pause it
             this.togglePause();
         } else if (this.gameStarted && this.isPaused) {
-            // Game is paused - resume it
             this.togglePause();
         }
     }
@@ -840,6 +935,52 @@ class TennisGame {
     }
     
     startGame() {
+        // If already started or counting down, ignore
+        if (this.gameStarted || this.isCountingDown) return;
+        this.beginCountdown();
+    }
+
+    // Begin a simple 1,2,3 countdown, then start the match
+    beginCountdown() {
+        this.isCountingDown = true;
+        this.countdownText = '1';
+        this.updateButtonStates();
+
+        const steps = ['1', '2', '3'];
+        let idx = 0;
+
+        const advance = () => {
+            if (!this.isCountingDown) return;
+            this.countdownText = steps[idx];
+            // Play a short beep per step
+            this.playSound('countdownBeep', Math.min(1, this.volume));
+
+            if (idx < steps.length - 1) {
+                this.countdownTimer = setTimeout(() => {
+                    idx++;
+                    advance();
+                }, 800);
+            } else {
+                // Show '3' briefly, then flash 'GO!' and start
+                this.countdownTimer = setTimeout(() => {
+                    if (!this.isCountingDown) return;
+                    // Flash GO!
+                    this.countdownText = 'GO!';
+                    this.playSound('countdownGo', Math.min(1, this.volume));
+                    
+                    this.countdownTimer = setTimeout(() => {
+                        this.isCountingDown = false;
+                        this.countdownText = '';
+                        this.finalizeStart();
+                    }, 600);
+                }, 600);
+            }
+        };
+
+        advance();
+    }
+
+    finalizeStart() {
         this.gameStarted = true;
         this.gameRunning = true;
         this.isPaused = false;
@@ -858,6 +999,16 @@ class TennisGame {
         const startBtn = document.getElementById('startBtn');
         const pauseBtn = document.getElementById('pauseBtn');
         const newGameBtn = document.getElementById('newGameBtn');
+        
+        if (this.isCountingDown) {
+            // During countdown, disable controls
+            startBtn.disabled = true;
+            startBtn.textContent = 'Get Ready…';
+            pauseBtn.disabled = true;
+            pauseBtn.textContent = 'Pause';
+            pauseBtn.classList.remove('paused');
+            return;
+        }
         
         if (!this.gameStarted) {
             startBtn.disabled = false;
@@ -881,6 +1032,14 @@ class TennisGame {
     }
     
     resetGame() {
+        // Cancel any active countdown
+        if (this.countdownTimer) {
+            clearTimeout(this.countdownTimer);
+            this.countdownTimer = null;
+        }
+        this.isCountingDown = false;
+        this.countdownText = '';
+        
         // Reset ball position and properties
         this.ball.x = this.width / 2 - this.ball.width / 2;
         this.ball.y = this.height / 2 - this.ball.height / 2;
@@ -1234,6 +1393,30 @@ class TennisGame {
         // Reset alpha for overlays
         this.ctx.globalAlpha = 1;
         
+        // Countdown overlay
+        if (this.isCountingDown) {
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+            this.ctx.fillRect(0, 0, this.width, this.height);
+
+            // Style GO! differently
+            if (this.countdownText === 'GO!') {
+                this.ctx.fillStyle = '#00FF88';
+                this.ctx.font = 'bold 64px Courier New';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText('GO!', this.width / 2, this.height / 2);
+            } else {
+                this.ctx.fillStyle = '#ffffff';
+                this.ctx.font = 'bold 72px Courier New';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(this.countdownText, this.width / 2, this.height / 2);
+                
+                this.ctx.font = '20px Courier New';
+                this.ctx.fillStyle = '#FFD700';
+                this.ctx.fillText('Get Ready', this.width / 2, this.height / 2 + 40);
+            }
+            return;
+        }
+
         // Draw confetti for victory animation
         if (this.animationState === 'victory') {
             this.drawConfetti();

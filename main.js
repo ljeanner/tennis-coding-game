@@ -466,9 +466,9 @@ class TennisGame {
         this.playerName = name;
         this.updateScoreDisplay();
 
-        // Hide overlay and start the game
+        // Hide overlay only; do NOT auto-start the game
         this.hideStartMenu();
-        this.startGame();
+        this.updateButtonStates();
 
         // Ensure keyboard input works immediately
         if (this.canvas && this.canvas.focus) {

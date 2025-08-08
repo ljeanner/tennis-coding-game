@@ -399,18 +399,8 @@ class TennisGame {
             this.touchActive = false;
         }, { passive: false });
         
-        // Prevent scrolling on the entire body when touching the game
-        document.body.addEventListener('touchstart', (e) => {
-            if (e.target.closest('.container')) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-        
-        document.body.addEventListener('touchmove', (e) => {
-            if (e.target.closest('.container')) {
-                e.preventDefault();
-            }
-        }, { passive: false });
+        // Removed body-level scroll prevention so UI buttons and selects still receive clicks/taps on mobile.
+        // Previously we had document.body touchstart/touchmove with preventDefault(), which blocks click synthesis.
     }
     
     askPlayerName() {

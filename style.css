@@ -64,6 +64,17 @@ body {
     cursor: pointer;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     transition: all 0.3s ease;
+    min-height: 40px; /* Better touch target */
+    /* Touch optimization */
+    touch-action: manipulation;
+    -webkit-appearance: none;
+    appearance: none;
+    /* Custom dropdown arrow */
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3E%3Cpath fill='%23333' d='M2 0L0 2h4zm0 5L0 3h4z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 12px;
+    padding-right: 32px;
 }
 
 .difficulty-selector select:hover {
@@ -125,7 +136,6 @@ body {
     display: block !important;
     visibility: visible !important;
     opacity: 1 !important;
-    background-color: #ff0000 !important;
     min-height: 200px !important;
     min-width: 200px !important;
 }
@@ -169,6 +179,8 @@ body {
     justify-content: center;
     flex-wrap: wrap;
     gap: 10px;
+    /* Touch optimization */
+    touch-action: manipulation;
 }
 
 .controls button {
@@ -185,6 +197,12 @@ body {
     transition: all 0.3s ease;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     min-width: 120px;
+    min-height: 44px; /* Minimum touch target size for accessibility */
+    /* Touch optimization */
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .controls button:hover {
@@ -196,6 +214,28 @@ body {
 .controls button:active {
     transform: translateY(0);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Touch-specific styles for better mobile experience */
+.controls button:active,
+.controls button:focus {
+    background: #007d3c;
+    outline: none;
+}
+
+/* Enhanced touch feedback - larger touch area on mobile */
+@media (hover: none) and (pointer: coarse) {
+    .controls button {
+        padding: 14px 24px;
+        min-height: 48px;
+        font-size: 1.1rem;
+        margin: 8px 0;
+    }
+    
+    .controls button:active {
+        background: #005f2d;
+        transform: scale(0.98);
+    }
 }
 
 .controls button:disabled {
@@ -216,7 +256,11 @@ body {
     font-size: 1.2rem;
     padding: 10px 15px;
     min-width: 50px;
+    min-height: 44px;
     transition: all 0.3s ease;
+    /* Touch optimization */
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
 }
 
 #muteBtn:hover {
@@ -284,9 +328,11 @@ body {
     }
     
     .difficulty-selector select {
-        padding: 8px 12px;
-        font-size: 0.9rem;
-        width: 140px;
+        padding: 10px 16px;
+        font-size: 1rem;
+        width: 160px;
+        min-height: 44px; /* Better mobile touch target */
+        padding-right: 36px; /* Account for custom arrow */
     }
     
     .score-display {
@@ -314,10 +360,14 @@ body {
     }
     
     .controls button {
-        padding: 10px 16px;
-        font-size: 0.9rem;
-        margin: 5px 0;
-        min-width: 140px;
+        padding: 12px 20px;
+        font-size: 1rem;
+        margin: 8px 0;
+        min-width: 160px;
+        min-height: 48px; /* Larger touch target for mobile */
+        /* Enhanced touch optimization for mobile */
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: rgba(0, 165, 80, 0.3);
     }
     
     /* iOS specific smaller canvas styling */

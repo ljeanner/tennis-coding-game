@@ -123,7 +123,7 @@ class TennisGame {
         // Images
         this.images = {};
         this.imagesLoaded = 0;
-        this.totalImages = 3;
+        this.totalImages = 4;
         
         // Audio
         this.audio = {};
@@ -207,7 +207,8 @@ class TennisGame {
         const imageFiles = {
             court: '/court3.png',
             ball: '/ball.png',
-            playerBack: '/player_back.png'
+            playerBack: '/player_back.png',
+            playerBackRight: '/player_back_right.png'
         };
         
         const loadPromises = Object.entries(imageFiles).map(([key, src]) => {
@@ -223,9 +224,10 @@ class TennisGame {
                     // Create a colored rectangle as fallback
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
-                    canvas.width = key === 'playerBack' ? 40 : 20;
-                    canvas.height = key === 'playerBack' ? 60 : 20;
-                    ctx.fillStyle = key === 'ball' ? '#ffff00' : key === 'playerBack' ? '#ff0000' : '#ffffff';
+                    const isPlayerSprite = key === 'playerBack' || key === 'playerBackRight';
+                    canvas.width = isPlayerSprite ? 40 : 20;
+                    canvas.height = isPlayerSprite ? 60 : 20;
+                    ctx.fillStyle = key === 'ball' ? '#ffff00' : isPlayerSprite ? '#ff0000' : '#ffffff';
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                     this.images[key] = canvas;
                     this.imagesLoaded++;
@@ -1369,9 +1371,14 @@ class TennisGame {
         // Allow sprite to be drawn even if it extends beyond canvas bounds
         this.ctx.save(); // Save current clipping state
         
-        if (this.images.playerBack) {
+        // Choose sprite based on player horizontal position (right half uses right-facing sprite)
+        const playerCenterX = this.paddle2.x + this.paddle2.width / 2;
+        const onRightSide = playerCenterX >= this.width / 2;
+        const chosenSprite = onRightSide && this.images.playerBackRight ? this.images.playerBackRight : this.images.playerBack;
+        
+        if (chosenSprite) {
             this.ctx.drawImage(
-                this.images.playerBack,
+                chosenSprite,
                 this.playerSprite.x,
                 this.playerSprite.y,
                 this.playerSprite.width,

@@ -174,6 +174,11 @@ class TennisGame {
         // Input handling
         this.keys = {};
         
+        this.startMenuEl = document.getElementById('startMenu');
+		this.playerNameInput = document.getElementById('playerNameInput');
+		this.menuStartBtn = document.getElementById('menuStartBtn');
+		this.startMenuForm = document.getElementById('startMenuForm');
+        
         this.init();
     }
     
@@ -319,6 +324,39 @@ class TennisGame {
         document.getElementById('muteBtn').addEventListener('click', () => {
             this.toggleMute();
         });
+        
+        // Start menu interactions
+		if (this.menuStartBtn && this.playerNameInput) {
+			const tryStart = (e) => {
+				if (e) e.preventDefault();
+				this.confirmStartFromMenu();
+			};
+			this.menuStartBtn.addEventListener('click', tryStart);
+			this.menuStartBtn.addEventListener('pointerdown', tryStart, { passive: false });
+			this.menuStartBtn.addEventListener('touchstart', tryStart, { passive: false });
+			this.playerNameInput.addEventListener('keydown', (e) => {
+				if (e.key === 'Enter') {
+					e.preventDefault();
+					this.confirmStartFromMenu();
+				}
+			});
+			// Global Enter fallback while menu visible
+			document.addEventListener('keydown', (e) => {
+				if (e.key === 'Enter' && this.startMenuEl && document.body.contains(this.startMenuEl)) {
+					e.preventDefault();
+					this.confirmStartFromMenu();
+				}
+			});
+			// Autofocus input when overlay present (small timeout for iOS reliability)
+			setTimeout(() => { this.playerNameInput.focus(); }, 50);
+		}
+		
+		if (this.startMenuForm) {
+			this.startMenuForm.addEventListener('submit', (e) => {
+				e.preventDefault();
+				this.confirmStartFromMenu();
+			});
+		}
     }
     
     setupTouchControls() {
@@ -404,13 +442,59 @@ class TennisGame {
     }
     
     askPlayerName() {
+        // If menu still visible, focus input instead of prompt
+        if (this.startMenuEl && document.body.contains(this.startMenuEl)) {
+            if (this.playerNameInput) this.playerNameInput.focus();
+            return;
+        }
+        
         const name = prompt('Enter your name:', this.playerName);
         if (name && name.trim()) {
             this.playerName = name.trim();
             this.updateScoreDisplay();
         }
     }
-    
+
+    // New: confirm start from the start menu overlay
+    confirmStartFromMenu() {
+        // Avoid double-starts
+        if (this.gameStarted) return;
+
+        // Read player name from input if available
+        let name = this.playerNameInput && this.playerNameInput.value ? this.playerNameInput.value.trim() : '';
+        if (!name) name = 'Player';
+        this.playerName = name;
+        this.updateScoreDisplay();
+
+        // Hide overlay and start the game
+        this.hideStartMenu();
+        this.startGame();
+
+        // Ensure keyboard input works immediately
+        if (this.canvas && this.canvas.focus) {
+            try { this.canvas.focus(); } catch {}
+        }
+    }
+
+    // New: fade out and remove the start menu overlay so it doesn't block clicks
+    hideStartMenu() {
+        if (!this.startMenuEl) return;
+
+        try {
+            this.startMenuEl.classList.add('hide');
+            this.startMenuEl.style.pointerEvents = 'none';
+        } catch {}
+
+        const el = this.startMenuEl;
+        // Remove from DOM after transition
+        setTimeout(() => {
+            if (el && el.parentElement) {
+                el.parentElement.removeChild(el);
+            }
+            this.startMenuEl = null;
+        }, 420);
+    }
+
     toggleMute() {
         this.isMuted = !this.isMuted;
         const muteBtn = document.getElementById('muteBtn');

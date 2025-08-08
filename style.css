@@ -275,7 +275,150 @@ body {
     background: #e55a2b;
 }
 
-/* Responsive design */
+/* Start menu overlay styles */
+.start-menu-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 2000;
+    font-family: 'Courier New', monospace;
+}
+
+.start-menu-overlay.hide {
+    pointer-events: none;
+}
+
+.start-menu-panel {
+    background: repeating-linear-gradient(45deg, #003d1f, #003d1f 6px, #004d26 6px, #004d26 12px);
+    border: 4px solid #00A550;
+    box-shadow: 0 0 0 4px #002612, 0 0 25px #00ff88 inset, 0 8px 20px rgba(0, 0, 0, 0.6);
+    padding: 40px 50px;
+    max-width: 520px;
+    width: 90%;
+    text-align: center;
+    border-radius: 12px;
+    position: relative;
+    animation: panelPop 0.6s cubic-bezier(.25, 1.4, .4, 1);
+}
+
+@keyframes panelPop {
+    0% {
+        transform: scale(.6) translateY(40px);
+        opacity: 0;
+    }
+    60% {
+        transform: scale(1.05) translateY(-6px);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1) translateY(0);
+    }
+}
+
+.menu-title {
+    color: #fff;
+    font-size: 1.6rem;
+    line-height: 1.3;
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 0 #006b36, 4px 4px 0 #001e10, 0 0 8px #00ff99;
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+
+.menu-field {
+    margin-bottom: 25px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.menu-field label {
+    color: #00ff99;
+    font-weight: bold;
+    font-size: 1rem;
+    text-shadow: 1px 1px 2px #001b0d;
+    letter-spacing: 1px;
+}
+
+.menu-field input {
+    width: 100%;
+    padding: 14px 16px;
+    background: #002a14;
+    border: 3px solid #00A550;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    font-size: 1.05rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    border-radius: 6px;
+    box-shadow: 0 0 0 2px #00190d inset, 0 4px 10px rgba(0, 0, 0, 0.5);
+    outline: none;
+    transition: .25s;
+}
+
+.menu-field input:focus {
+    border-color: #00ff99;
+    box-shadow: 0 0 0 2px #004d26 inset, 0 0 12px #00ff99;
+}
+
+.menu-start-btn {
+    display: block;
+    width: 100%;
+    padding: 18px 10px;
+    margin-top: 5px;
+    background: linear-gradient(#00c463, #00994d);
+    border: 0;
+    position: relative;
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-family: 'Courier New', monospace;
+    cursor: pointer;
+    box-shadow: 0 6px #004f29, 0 0 0 4px #002612, 0 0 18px rgba(0, 255, 160, 0.4);
+    border-radius: 8px;
+    transition: .2s;
+}
+
+.menu-start-btn:before,
+.menu-start-btn:after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 8px;
+}
+
+.menu-start-btn:before {
+    background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0 8px, transparent 8px 16px);
+    mix-blend-mode: overlay;
+    pointer-events: none;
+}
+
+.menu-start-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px #004f29, 0 0 0 4px #002612, 0 0 30px rgba(0, 255, 160, 0.6);
+} 
+
+.menu-start-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 3px #004f29, 0 0 0 4px #002612, 0 0 15px rgba(0, 255, 160, 0.5);
+} 
+
+.menu-hint {
+    margin-top: 18px;
+    color: #b5ffe2;
+    font-size: .8rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    opacity: .8;
+    text-shadow: 0 0 6px #00ff99;
+}
+
 @media (max-width: 850px) {
     .container {
         padding: 10px;
@@ -388,6 +531,22 @@ body {
         -webkit-user-select: none;
         user-select: none;
     }
+}
+
+@media (max-width: 560px) {
+    .start-menu-panel {
+        padding: 32px 28px;
+    }
+
+    .menu-title {
+        font-size: 1.25rem;
+        margin-bottom: 24px;
+    } 
+
+    .menu-start-btn {
+        font-size: 1.05rem;
+        padding: 16px 10px;
+    } 
 }
 
 /* iOS Safari specific fixes */

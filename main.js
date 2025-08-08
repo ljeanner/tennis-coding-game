@@ -156,6 +156,15 @@ class TennisGame {
             x: this.width / 2 - 20, // Will be updated to follow paddle
             y: this.height - 35 + 15 + 5 // Initial position below paddle
         };
+        // NEW: Copilot sprite (attached to paddle1)
+        this.copilotSprite = {
+            width: 50,
+            height: 70,
+            offsetY: 6, // Place just above the paddle; will clamp to 0
+            offsetX: 0,
+            x: this.width / 2 - 25,
+            y: Math.max(0, 20 - 70 - 6) // Initial guess; will be updated
+        };
         this.ball = { 
             x: this.width / 2, 
             y: this.height / 2, 
@@ -208,7 +217,9 @@ class TennisGame {
             court: '/court3.png',
             ball: '/ball.png',
             playerBack: '/player_back.png',
-            playerBackRight: '/player_back_right.png'
+            playerBackRight: '/player_back_right.png',
+            // NEW: Copilot sprite image
+            playerCopilot: '/player_copilot.png'
         };
         
         const loadPromises = Object.entries(imageFiles).map(([key, src]) => {
@@ -224,10 +235,10 @@ class TennisGame {
                     // Create a colored rectangle as fallback
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
-                    const isPlayerSprite = key === 'playerBack' || key === 'playerBackRight';
+                    const isPlayerSprite = key === 'playerBack' || key === 'playerBackRight' || key === 'playerCopilot';
                     canvas.width = isPlayerSprite ? 40 : 20;
                     canvas.height = isPlayerSprite ? 60 : 20;
-                    ctx.fillStyle = key === 'ball' ? '#ffff00' : isPlayerSprite ? '#ff0000' : '#ffffff';
+                    ctx.fillStyle = key === 'ball' ? '#ffff00' : isPlayerSprite ? '#4c9eff' : '#ffffff';
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                     this.images[key] = canvas;
                     this.imagesLoaded++;
@@ -1059,6 +1070,8 @@ class TennisGame {
         
         // Reset player sprite position
         this.updatePlayerSpritePosition();
+        // NEW: Reset copilot sprite position
+        this.updateCopilotSpritePosition();
         
         // Reset scores and win conditions
         this.copilotScore = 0;
@@ -1183,6 +1196,9 @@ class TennisGame {
         this.paddle1.x = Math.max(0, Math.min(this.width - this.paddle1.width, this.paddle1.x));
         this.paddle1.y = Math.max(aiMinY, Math.min(aiMaxY, this.paddle1.y));
         
+        // Keep copilot sprite synced with AI paddle
+        this.updateCopilotSpritePosition();
+        
         // Tennis-style Ball Physics - Diagonal trajectories
         this.ball.x += this.ball.speedX;
         this.ball.y += this.ball.speedY;
@@ -1288,6 +1304,20 @@ class TennisGame {
         this.playerSprite.y = Math.max(0, Math.min(this.height - this.playerSprite.height, this.playerSprite.y));
     }
     
+    // NEW: Keep copilot sprite centered on paddle1 and just behind it (toward the top)
+    updateCopilotSpritePosition() {
+        // Center horizontally on paddle1
+        this.copilotSprite.x = this.paddle1.x + (this.paddle1.width - this.copilotSprite.width) / 2 + this.copilotSprite.offsetX;
+        // Position above the paddle (behind it from player POV)
+        this.copilotSprite.y = this.paddle1.y - this.copilotSprite.height - this.copilotSprite.offsetY;
+
+        // Clamp within canvas bounds
+        const spriteMinX = 0;
+        const spriteMaxX = this.width - this.copilotSprite.width;
+        this.copilotSprite.x = Math.max(spriteMinX, Math.min(spriteMaxX, this.copilotSprite.x));
+        this.copilotSprite.y = Math.max(0, Math.min(this.height - this.copilotSprite.height, this.copilotSprite.y));
+    }
+
     checkCollision(rect1, rect2) {
         return rect1.x < rect2.x + rect2.width &&
                rect1.x + rect1.width > rect2.x &&
@@ -1321,13 +1351,44 @@ class TennisGame {
             this.ctx.setLineDash([]);
         }
         
-        // Draw court boundaries (playable area) - REMOVED
-        // this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-        // this.ctx.lineWidth = 3;
-        // this.ctx.setLineDash([]);
-        // this.ctx.strokeRect(this.courtBounds.left, this.courtBounds.top, 
-        //                    this.courtBounds.right - this.courtBounds.left, 
-        //                    this.courtBounds.bottom - this.courtBounds.top);
+        // NEW: Draw Copilot sprite BEFORE the top paddle so it appears just behind it
+        (function drawCopilotSprite(self){
+            const img = self.images.playerCopilot;
+            if (!img) {
+                // Fallback rectangle
+                self.ctx.fillStyle = 'rgba(76, 158, 255, 0.9)';
+                self.ctx.fillRect(self.copilotSprite.x, self.copilotSprite.y, self.copilotSprite.width, self.copilotSprite.height);
+                self.ctx.strokeStyle = '#ffffff';
+                self.ctx.lineWidth = 2;
+                self.ctx.strokeRect(self.copilotSprite.x, self.copilotSprite.y, self.copilotSprite.width, self.copilotSprite.height);
+                return;
+            }
+            const copCenterX = self.paddle1.x + self.paddle1.width / 2;
+            const onRight = copCenterX >= self.width / 2;
+            if (onRight) {
+                self.ctx.save();
+                // Mirror around the sprite center X
+                const cx = self.copilotSprite.x + self.copilotSprite.width / 2;
+                self.ctx.translate(cx, 0);
+                self.ctx.scale(-1, 1);
+                self.ctx.drawImage(
+                    img,
+                    -self.copilotSprite.width / 2,
+                    self.copilotSprite.y,
+                    self.copilotSprite.width,
+                    self.copilotSprite.height
+                );
+                self.ctx.restore();
+            } else {
+                self.ctx.drawImage(
+                    img,
+                    self.copilotSprite.x,
+                    self.copilotSprite.y,
+                    self.copilotSprite.width,
+                    self.copilotSprite.height
+                );
+            }
+        })(this);
         
         // Draw paddles as colored bars (top-down view)
         // Copilot paddle (top) - Blue

@@ -328,6 +328,106 @@ body {
     letter-spacing: 2px;
 }
 
+.menu-subtitle {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0.5rem 0 2rem 0;
+    text-align: center;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-family: 'Courier New', monospace;
+    
+    /* Classic retro arcade neon green text */
+    color: #00ff00;
+    
+    /* Multiple layered glowing laser effect - bright green with depth */
+    text-shadow: 
+        /* Sharp inner glow */
+        0 0 4px #00ff00,
+        0 0 8px #00ff00,
+        /* Medium soft glow */
+        0 0 12px #00ff00,
+        0 0 16px #00ff00,
+        0 0 20px #00ff00,
+        /* Outer soft halo */
+        0 0 30px rgba(0, 255, 0, 0.8),
+        0 0 40px rgba(0, 255, 0, 0.6),
+        0 0 50px rgba(0, 255, 0, 0.4),
+        /* Deep laser glow */
+        0 0 70px rgba(0, 255, 0, 0.3),
+        0 0 90px rgba(0, 255, 0, 0.2);
+    
+    /* Animations */
+    animation: 
+        neonLaserPulse 2s ease-in-out infinite alternate,
+        arcadeFlicker 0.15s infinite alternate,
+        fadeInUp 0.8s ease-out 0.3s both;
+}
+
+/* Enhanced neon laser pulse effect - classic arcade green */
+@keyframes neonLaserPulse {
+    0% {
+        text-shadow: 
+            0 0 4px #00ff00,
+            0 0 8px #00ff00,
+            0 0 12px #00ff00,
+            0 0 16px #00ff00,
+            0 0 20px #00ff00,
+            0 0 30px rgba(0, 255, 0, 0.8),
+            0 0 40px rgba(0, 255, 0, 0.6),
+            0 0 50px rgba(0, 255, 0, 0.4),
+            0 0 70px rgba(0, 255, 0, 0.3),
+            0 0 90px rgba(0, 255, 0, 0.2);
+    }
+    50% {
+        text-shadow: 
+            0 0 6px #00ff00,
+            0 0 12px #00ff00,
+            0 0 18px #00ff00,
+            0 0 24px #00ff00,
+            0 0 30px #00ff00,
+            0 0 40px rgba(0, 255, 0, 0.9),
+            0 0 55px rgba(0, 255, 0, 0.7),
+            0 0 70px rgba(0, 255, 0, 0.5),
+            0 0 90px rgba(0, 255, 0, 0.4),
+            0 0 110px rgba(0, 255, 0, 0.3);
+    }
+    100% {
+        text-shadow: 
+            0 0 8px #00ff00,
+            0 0 16px #00ff00,
+            0 0 24px #00ff00,
+            0 0 32px #00ff00,
+            0 0 40px #00ff00,
+            0 0 50px rgba(0, 255, 0, 1),
+            0 0 70px rgba(0, 255, 0, 0.8),
+            0 0 90px rgba(0, 255, 0, 0.6),
+            0 0 110px rgba(0, 255, 0, 0.5),
+            0 0 130px rgba(0, 255, 0, 0.4);
+    }
+}
+
+/* Subtle arcade screen flicker */
+@keyframes arcadeFlicker {
+    0%, 100% {
+        opacity: 1;
+    }
+    92% {
+        opacity: 0.96;
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .menu-field {
     margin-bottom: 25px;
     display: flex;

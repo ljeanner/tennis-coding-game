@@ -338,17 +338,17 @@ body {
     font-family: 'Courier New', monospace;
     
     /* Classic retro arcade neon green text */
-    color: #00ff00;
+    color: #00e6ff;
     
     /* Multiple layered glowing laser effect - bright green with depth */
     text-shadow: 
         /* Sharp inner glow */
-        0 0 4px #00ff00,
-        0 0 8px #00ff00,
+        0 0 4px #00e6ff,
+        0 0 8px #00e6ff,
         /* Medium soft glow */
-        0 0 12px #00ff00,
-        0 0 16px #00ff00,
-        0 0 20px #00ff00,
+        0 0 12px #00e6ff ,
+        0 0 16px #00e6ff ,
+        0 0 20px #00e6ff ,
         /* Outer soft halo */
         0 0 30px rgba(0, 255, 0, 0.8),
         0 0 40px rgba(0, 255, 0, 0.6),
@@ -368,11 +368,11 @@ body {
 @keyframes neonLaserPulse {
     0% {
         text-shadow: 
-            0 0 4px #00ff00,
-            0 0 8px #00ff00,
-            0 0 12px #00ff00,
-            0 0 16px #00ff00,
-            0 0 20px #00ff00,
+            0 0 4px #00e6ff ,
+            0 0 8px #00e6ff ,
+            0 0 12px #00e6ff ,
+            0 0 16px #00e6ff ,
+            0 0 20px #00e6ff ,
             0 0 30px rgba(0, 255, 0, 0.8),
             0 0 40px rgba(0, 255, 0, 0.6),
             0 0 50px rgba(0, 255, 0, 0.4),
@@ -381,11 +381,11 @@ body {
     }
     50% {
         text-shadow: 
-            0 0 6px #00ff00,
-            0 0 12px #00ff00,
-            0 0 18px #00ff00,
-            0 0 24px #00ff00,
-            0 0 30px #00ff00,
+            0 0 6px #00e6ff ,
+            0 0 12px #00e6ff ,
+            0 0 18px #00e6ff ,
+            0 0 24px #00e6ff ,
+            0 0 30px #00e6ff ,
             0 0 40px rgba(0, 255, 0, 0.9),
             0 0 55px rgba(0, 255, 0, 0.7),
             0 0 70px rgba(0, 255, 0, 0.5),
@@ -394,11 +394,11 @@ body {
     }
     100% {
         text-shadow: 
-            0 0 8px #00ff00,
-            0 0 16px #00ff00,
-            0 0 24px #00ff00,
-            0 0 32px #00ff00,
-            0 0 40px #00ff00,
+            0 0 8px #00e6ff ,
+            0 0 16px #00e6ff ,
+            0 0 24px #00e6ff ,
+            0 0 32px #00e6ff ,
+            0 0 40px #00e6ff ,
             0 0 50px rgba(0, 255, 0, 1),
             0 0 70px rgba(0, 255, 0, 0.8),
             0 0 90px rgba(0, 255, 0, 0.6),

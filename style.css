@@ -21,7 +21,7 @@ body {
     max-width: 900px;
     width: 100%;
     /* Prevent touch scrolling on the game area */
-    touch-action: none;
+    touch-action: auto; /* was none; allow UI interactions; canvas remains none */
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
@@ -285,6 +285,9 @@ body {
     background: rgba(0, 0, 0, 0.85);
     z-index: 2000;
     font-family: 'Courier New', monospace;
+    /* Ensure overlay is interactive on iOS */
+    pointer-events: auto;
+    touch-action: manipulation;
 }
 
 .start-menu-overlay.hide {
@@ -661,4 +664,16 @@ body {
         -webkit-backface-visibility: hidden;
         backface-visibility: hidden;
     }
+}
+
+/* Ensure form controls on the overlay are fully interactive on iOS */
+.start-menu-panel input,
+.start-menu-panel button,
+#startMenuForm input,
+#startMenuForm button,
+#menuStartBtn {
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
+    touch-action: manipulation;
 }

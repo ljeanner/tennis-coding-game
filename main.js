@@ -365,6 +365,9 @@ class TennisGame {
             this.menuStartBtn.addEventListener('click', tryStart);
             this.menuStartBtn.addEventListener('pointerdown', tryStart, { passive: false });
             this.menuStartBtn.addEventListener('touchstart', tryStart, { passive: false });
+            // Ensure iOS synthesizes activation even when click is suppressed
+            this.menuStartBtn.addEventListener('pointerup', tryStart, { passive: false });
+            this.menuStartBtn.addEventListener('touchend', tryStart, { passive: false });
             this.playerNameInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();

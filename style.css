@@ -522,6 +522,22 @@ body {
     text-shadow: 0 0 6px #00ff99;
 }
 
+/* Returning user start menu helpers */
+.returning-menu { display: none; }
+.returning-menu .returning-actions { margin-top: 12px; gap: 12px; }
+
+/* Blue style for the "Change name" button */
+#welcomeChangeBtn {
+    background: #1e90ff;
+    color: #fff;
+}
+#welcomeChangeBtn:hover {
+    background: #187bcd;
+}
+#welcomeChangeBtn:active {
+    background: #1569a7;
+}
+
 @media (max-width: 850px) {
     .container {
         padding: 10px;

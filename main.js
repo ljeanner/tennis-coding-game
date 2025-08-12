@@ -1,3 +1,5 @@
+import { ensurePlayer, setPlayerName, getPlayer, onPlayerReady } from './src/services/session';
+
 // Game state and configuration
 class TennisGame {
     constructor() {
@@ -196,8 +198,67 @@ class TennisGame {
 		this.playerNameInput = document.getElementById('playerNameInput');
 		this.menuStartBtn = document.getElementById('menuStartBtn');
 		this.startMenuForm = document.getElementById('startMenuForm');
+        this.returningMenu = document.getElementById('returningMenu');
+        this.welcomeNameEl = document.getElementById('welcomeName');
+        this.welcomeEnterBtn = document.getElementById('welcomeEnterBtn');
+        this.welcomeChangeBtn = document.getElementById('welcomeChangeBtn');
+        
+        // Session bootstrap
+        try {
+            onPlayerReady((player) => {
+                if (player && player.playerName) {
+                    this.playerName = player.playerName;
+                    this.updateScoreDisplay();
+                    // Show returning UI if menu present
+                    if (this.returningMenu && this.welcomeNameEl) {
+                        this.welcomeNameEl.textContent = player.playerName;
+                        this.showReturningMenu();
+                    }
+                }
+            });
+            const player = ensurePlayer();
+            if (player && player.playerName) {
+                this.playerName = player.playerName;
+                this.updateScoreDisplay();
+                if (this.returningMenu && this.welcomeNameEl) {
+                    this.welcomeNameEl.textContent = player.playerName;
+                    this.showReturningMenu();
+                }
+            }
+        } catch {}
         
         this.init();
+    }
+    
+    showReturningMenu() {
+        if (!this.startMenuEl) return;
+        // Switch to returning view
+        if (this.startMenuForm) this.startMenuForm.style.display = 'none';
+        if (this.returningMenu) this.returningMenu.style.display = 'block';
+        // Wire returning buttons once
+        if (this.welcomeEnterBtn && !this.welcomeEnterBtn._wired) {
+            this.welcomeEnterBtn._wired = true;
+            this.welcomeEnterBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                // Hide menu and start immediately
+                this.hideStartMenu();
+                this.beginCountdown();
+            }, { passive: false });
+        }
+        if (this.welcomeChangeBtn && !this.welcomeChangeBtn._wired) {
+            this.welcomeChangeBtn._wired = true;
+            this.welcomeChangeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                // Switch back to name-entry flow but keep same playerId
+                if (this.returningMenu) this.returningMenu.style.display = 'none';
+                if (this.startMenuForm) this.startMenuForm.style.display = 'block';
+                if (this.playerNameInput) {
+                    const current = getPlayer().playerName || '';
+                    this.playerNameInput.value = current;
+                    setTimeout(() => this.playerNameInput && this.playerNameInput.focus(), 50);
+                }
+            }, { passive: false });
+        }
     }
     
     async init() {
@@ -487,10 +548,10 @@ class TennisGame {
             if (this.playerNameInput) this.playerNameInput.focus();
             return;
         }
-        
         const name = prompt('Enter your name:', this.playerName);
         if (name && name.trim()) {
-            this.playerName = name.trim();
+            const p = setPlayerName(name.trim());
+            this.playerName = p.playerName || this.playerName;
             this.updateScoreDisplay();
         }
     }
@@ -499,18 +560,15 @@ class TennisGame {
     confirmStartFromMenu() {
         // Avoid double-starts
         if (this.gameStarted) return;
-
         // Read player name from input if available
         let name = this.playerNameInput && this.playerNameInput.value ? this.playerNameInput.value.trim() : '';
         if (!name) name = 'Player';
-        this.playerName = name;
+        const p = setPlayerName(name);
+        this.playerName = p.playerName || name;
         this.updateScoreDisplay();
-
-        // Hide overlay only; do NOT auto-start the game
+        // Hide overlay
         this.hideStartMenu();
         this.updateButtonStates();
-
-        // Ensure keyboard input works immediately
         if (this.canvas && this.canvas.focus) {
             try { this.canvas.focus(); } catch {}
         }

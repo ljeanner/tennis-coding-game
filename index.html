@@ -50,10 +50,18 @@
         <div class="start-menu-panel">
             <h2 class="menu-title">Welcome to Ace2Ace !</h2>
             <h3 class="menu-subtitle">Ready to smash Copilot off the court?</h3>
+            <!-- Returning user view (hidden by default) -->
+            <div id="returningMenu" class="returning-menu">
+                <p class="menu-hint" id="welcomeBackText">Welcome back, <span id="welcomeName">Player</span></p>
+                <div class="game-controls returning-actions">
+                    <button id="welcomeEnterBtn" class="menu-start-btn" type="button" aria-label="Enter Game Now">▶ Enter Game</button>
+                    <button id="welcomeChangeBtn" class="menu-start-btn" type="button" aria-label="Change Player Name">✎ Change name</button>
+                </div>
+            </div>
+            <!-- New user view -->
             <form id="startMenuForm" novalidate>
                 <div class="menu-field">
-                    <label for="playerNameInput">Enter your name:</label>
-                    <input type="text" id="playerNameInput" maxlength="12" placeholder="Player" autocomplete="off" spellcheck="false" />
+                    <label for="playerNameInput">Enter your name:</label>                    <input type="text" id="playerNameInput" maxlength="12" placeholder="Player" autocomplete="off" spellcheck="false" />
                 </div>
                 <button id="menuStartBtn" class="menu-start-btn" type="submit" aria-label="Start Game">▶ Enter Game</button>
             </form>

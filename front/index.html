@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>BNP Tennis Game</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-size@2"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="game-header">
+            <h1>Ace 2 Ace</h1>
+            <div class="difficulty-selector">
+                <label for="difficultySelect">Difficulty:</label>
+                <select id="difficultySelect">
+                    <option value="beginner">Beginner</option>
+                    <option value="advanced">Advanced</option>
+                    <option value="expert">Expert</option>
+                </select>
+            </div>
+            <div class="score-display">
+                <span id="copilot-score">Copilot: 0</span>
+                <span class="score-separator">|</span>
+                <span id="player-score">Player: 0</span>
+            </div>
+        </div>
+        
+        <div class="game-container">
+            <canvas id="gameCanvas" width="320" height="480"></canvas>
+        </div>
+        
+        <div class="controls">
+            <p class="desktop-controls">Use ← → ↑ ↓ arrow keys to control your paddle</p>
+            <p class="mobile-controls">👆 Touch and move your finger anywhere to control your paddle in 2D</p>
+            <p class="control-hint">💡 Click/tap on the court to start/pause • Full paddle control with your finger!</p>
+            <div class="game-controls">
+                <button id="startBtn">Start Game</button>
+                <button id="pauseBtn">Pause</button>
+                <button id="newGameBtn">New Game</button>
+                <button id="playerNameBtn">Change Player Name</button>
+                <button id="muteBtn" title="Toggle sound">🔊</button>
+            </div>
+        </div>
+    </div>
+    <!-- Start Menu Overlay -->
+    <div id="startMenu" class="start-menu-overlay" aria-modal="true" role="dialog">
+        <div class="start-menu-panel">
+            <h2 class="menu-title">Welcome to Ace2Ace !</h2>
+            <h3 class="menu-subtitle">Ready to smash Copilot off the court?</h3>
+            <!-- Returning user view (hidden by default) -->
+            <div id="returningMenu" class="returning-menu">
+                <p class="menu-hint" id="welcomeBackText">Welcome back, <span id="welcomeName">Player</span></p>
+                <div class="game-controls returning-actions">
+                    <button id="welcomeEnterBtn" class="menu-start-btn" type="button" aria-label="Enter Game Now">▶ Enter Game</button>
+                    <button id="welcomeChangeBtn" class="menu-start-btn" type="button" aria-label="Change Player Name">✎ Change name</button>
+                </div>
+            </div>
+            <!-- New user view -->
+            <form id="startMenuForm" novalidate>
+                <div class="menu-field">
+                    <label for="playerNameInput">Enter your name:</label>                    <input type="text" id="playerNameInput" maxlength="12" placeholder="Player" autocomplete="off" spellcheck="false" />
+                </div>
+                <button id="menuStartBtn" class="menu-start-btn" type="submit" aria-label="Start Game">▶ Enter Game</button>
+            </form>
+            <p class="menu-hint">Press ENTER or tap the button to begin</p>
+        </div>
+    </div>
+    <script type="module" src="./main.js"></script>
+</body>
+</html>

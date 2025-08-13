@@ -3,9 +3,10 @@ metadata:
   template: bnpp-tennis-game@0.0.1-beta
 infra:
   provider: bicep
+  path: ./infra
 services:
   web:
-    project: ./
+    project: ./front
     host: staticwebapp
     language: js
     dist: dist

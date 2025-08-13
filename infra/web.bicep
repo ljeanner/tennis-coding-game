@@ -25,7 +25,7 @@ resource staticWebApp 'Microsoft.Web/staticSites@2022-03-01' = {
   }
   properties: {
     buildProperties: {
-      appLocation: '/'
+      appLocation: '/front'
       outputLocation: 'dist'
       appBuildCommand: 'npm run build'
     }

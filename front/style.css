@@ -1,0 +1,695 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Courier New', monospace;
+    background: linear-gradient(135deg, #001a0a 0%, #003d1f 100%);
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.container {
+    text-align: center;
+    max-width: 900px;
+    width: 100%;
+    /* Prevent touch scrolling on the game area */
+    touch-action: auto; /* was none; allow UI interactions; canvas remains none */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.game-header {
+    margin-bottom: 20px;
+}
+
+.game-header h1 {
+    color: #00A550;
+    font-size: 2.5rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    margin-bottom: 15px;
+    letter-spacing: 3px;
+}
+
+.difficulty-selector {
+    margin-bottom: 15px;
+}
+
+.difficulty-selector label {
+    color: #00A550;
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-right: 10px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.difficulty-selector select {
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #00A550;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #333;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    min-height: 40px; /* Better touch target */
+    /* Touch optimization */
+    touch-action: manipulation;
+    -webkit-appearance: none;
+    appearance: none;
+    /* Custom dropdown arrow */
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3E%3Cpath fill='%23333' d='M2 0L0 2h4zm0 5L0 3h4z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 12px;
+    padding-right: 32px;
+}
+
+.difficulty-selector select:hover {
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.difficulty-selector select:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 165, 80, 0.3);
+}
+
+.score-display {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    display: inline-block;
+    margin-bottom: 15px;
+}
+
+.score-separator {
+    margin: 0 15px;
+    color: #666;
+}
+
+.game-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    background: #d36c24;
+    padding: 8px;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    display: inline-block;
+}
+
+#gameCanvas {
+    border: 40px solid #d36c24;
+    border-radius: 8px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    transition: all 0.3s ease;
+    -webkit-user-select: none;
+    user-select: none;
+    /* iOS Safari canvas rendering fixes */
+    -webkit-transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    /* Touch controls optimization */
+    touch-action: none;
+    /* Force visibility for iOS debugging */
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-height: 200px !important;
+    min-width: 200px !important;
+}
+
+#gameCanvas:hover {
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.4);
+    transform: translateY(-2px);
+}
+
+.controls {
+    color: white;
+    margin-top: 20px;
+}
+
+.controls p {
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+    color: #ccc;
+}
+
+.desktop-controls {
+    display: block;
+}
+
+.mobile-controls {
+    display: none;
+    color: #00A550 !important;
+    font-weight: bold;
+}
+
+.control-hint {
+    font-size: 0.95rem !important;
+    color: #00A550 !important;
+    font-weight: bold;
+    margin-bottom: 10px !important;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.game-controls {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    /* Touch optimization */
+    touch-action: manipulation;
+}
+
+.controls button {
+    background: #00A550;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    margin: 0;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    min-width: 120px;
+    min-height: 44px; /* Minimum touch target size for accessibility */
+    /* Touch optimization */
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.controls button:hover {
+    background: #008a43;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.controls button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Touch-specific styles for better mobile experience */
+.controls button:active,
+.controls button:focus {
+    background: #007d3c;
+    outline: none;
+}
+
+/* Enhanced touch feedback - larger touch area on mobile */
+@media (hover: none) and (pointer: coarse) {
+    .controls button {
+        padding: 14px 24px;
+        min-height: 48px;
+        font-size: 1.1rem;
+        margin: 8px 0;
+    }
+    
+    .controls button:active {
+        background: #005f2d;
+        transform: scale(0.98);
+    }
+}
+
+.controls button:disabled {
+    background: #666;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.controls button:disabled:hover {
+    background: #666;
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Mute button specific styles */
+#muteBtn {
+    font-size: 1.2rem;
+    padding: 10px 15px;
+    min-width: 50px;
+    min-height: 44px;
+    transition: all 0.3s ease;
+    /* Touch optimization */
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
+}
+
+#muteBtn:hover {
+    transform: scale(1.1) translateY(-2px);
+}
+
+#pauseBtn.paused {
+    background: #ff6b35;
+}
+
+#pauseBtn.paused:hover {
+    background: #e55a2b;
+}
+
+/* Start menu overlay styles */
+.start-menu-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 2000;
+    font-family: 'Courier New', monospace;
+    /* Ensure overlay is interactive on iOS */
+    pointer-events: auto;
+    touch-action: manipulation;
+}
+
+.start-menu-overlay.hide {
+    pointer-events: none;
+}
+
+.start-menu-panel {
+    background: repeating-linear-gradient(45deg, #003d1f, #003d1f 6px, #004d26 6px, #004d26 12px);
+    border: 4px solid #00A550;
+    box-shadow: 0 0 0 4px #002612, 0 0 25px #00ff88 inset, 0 8px 20px rgba(0, 0, 0, 0.6);
+    padding: 40px 50px;
+    max-width: 520px;
+    width: 90%;
+    text-align: center;
+    border-radius: 12px;
+    position: relative;
+    animation: panelPop 0.6s cubic-bezier(.25, 1.4, .4, 1);
+}
+
+@keyframes panelPop {
+    0% {
+        transform: scale(.6) translateY(40px);
+        opacity: 0;
+    }
+    60% {
+        transform: scale(1.05) translateY(-6px);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1) translateY(0);
+    }
+}
+
+.menu-title {
+    color: #fff;
+    font-size: 1.6rem;
+    line-height: 1.3;
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 0 #006b36, 4px 4px 0 #001e10, 0 0 8px #00ff99;
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+
+.menu-subtitle {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0.5rem 0 2rem 0;
+    text-align: center;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-family: 'Courier New', monospace;
+    
+    /* Classic retro arcade neon green text */
+    color: #00e6ff;
+    
+    /* Multiple layered glowing laser effect - bright green with depth */
+    text-shadow: 
+        /* Sharp inner glow */
+        0 0 4px #00e6ff,
+        0 0 8px #00e6ff,
+        /* Medium soft glow */
+        0 0 12px #00e6ff ,
+        0 0 16px #00e6ff ,
+        0 0 20px #00e6ff ,
+        /* Outer soft halo */
+        0 0 30px rgba(0, 255, 0, 0.8),
+        0 0 40px rgba(0, 255, 0, 0.6),
+        0 0 50px rgba(0, 255, 0, 0.4),
+        /* Deep laser glow */
+        0 0 70px rgba(0, 255, 0, 0.3),
+        0 0 90px rgba(0, 255, 0, 0.2);
+    
+    /* Animations */
+    animation: 
+        neonLaserPulse 2s ease-in-out infinite alternate,
+        arcadeFlicker 0.15s infinite alternate,
+        fadeInUp 0.8s ease-out 0.3s both;
+}
+
+/* Enhanced neon laser pulse effect - classic arcade green */
+@keyframes neonLaserPulse {
+    0% {
+        text-shadow: 
+            0 0 4px #00e6ff ,
+            0 0 8px #00e6ff ,
+            0 0 12px #00e6ff ,
+            0 0 16px #00e6ff ,
+            0 0 20px #00e6ff ,
+            0 0 30px rgba(0, 255, 0, 0.8),
+            0 0 40px rgba(0, 255, 0, 0.6),
+            0 0 50px rgba(0, 255, 0, 0.4),
+            0 0 70px rgba(0, 255, 0, 0.3),
+            0 0 90px rgba(0, 255, 0, 0.2);
+    }
+    50% {
+        text-shadow: 
+            0 0 6px #00e6ff ,
+            0 0 12px #00e6ff ,
+            0 0 18px #00e6ff ,
+            0 0 24px #00e6ff ,
+            0 0 30px #00e6ff ,
+            0 0 40px rgba(0, 255, 0, 0.9),
+            0 0 55px rgba(0, 255, 0, 0.7),
+            0 0 70px rgba(0, 255, 0, 0.5),
+            0 0 90px rgba(0, 255, 0, 0.4),
+            0 0 110px rgba(0, 255, 0, 0.3);
+    }
+    100% {
+        text-shadow: 
+            0 0 8px #00e6ff ,
+            0 0 16px #00e6ff ,
+            0 0 24px #00e6ff ,
+            0 0 32px #00e6ff ,
+            0 0 40px #00e6ff ,
+            0 0 50px rgba(0, 255, 0, 1),
+            0 0 70px rgba(0, 255, 0, 0.8),
+            0 0 90px rgba(0, 255, 0, 0.6),
+            0 0 110px rgba(0, 255, 0, 0.5),
+            0 0 130px rgba(0, 255, 0, 0.4);
+    }
+}
+
+/* Subtle arcade screen flicker */
+@keyframes arcadeFlicker {
+    0%, 100% {
+        opacity: 1;
+    }
+    92% {
+        opacity: 0.96;
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.menu-field {
+    margin-bottom: 25px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.menu-field label {
+    color: #00ff99;
+    font-weight: bold;
+    font-size: 1rem;
+    text-shadow: 1px 1px 2px #001b0d;
+    letter-spacing: 1px;
+}
+
+.menu-field input {
+    width: 100%;
+    padding: 14px 16px;
+    background: #002a14;
+    border: 3px solid #00A550;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    font-size: 1.05rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    border-radius: 6px;
+    box-shadow: 0 0 0 2px #00190d inset, 0 4px 10px rgba(0, 0, 0, 0.5);
+    outline: none;
+    transition: .25s;
+}
+
+.menu-field input:focus {
+    border-color: #00ff99;
+    box-shadow: 0 0 0 2px #004d26 inset, 0 0 12px #00ff99;
+}
+
+.menu-start-btn {
+    display: block;
+    width: 100%;
+    padding: 18px 10px;
+    margin-top: 5px;
+    background: linear-gradient(#00c463, #00994d);
+    border: 0;
+    position: relative;
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-family: 'Courier New', monospace;
+    cursor: pointer;
+    box-shadow: 0 6px #004f29, 0 0 0 4px #002612, 0 0 18px rgba(0, 255, 160, 0.4);
+    border-radius: 8px;
+    transition: .2s;
+}
+
+.menu-start-btn:before,
+.menu-start-btn:after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 8px;
+}
+
+.menu-start-btn:before {
+    background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0 8px, transparent 8px 16px);
+    mix-blend-mode: overlay;
+    pointer-events: none;
+}
+
+.menu-start-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px #004f29, 0 0 0 4px #002612, 0 0 30px rgba(0, 255, 160, 0.6);
+} 
+
+.menu-start-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 3px #004f29, 0 0 0 4px #002612, 0 0 15px rgba(0, 255, 160, 0.5);
+} 
+
+.menu-hint {
+    margin-top: 18px;
+    color: #b5ffe2;
+    font-size: .8rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    opacity: .8;
+    text-shadow: 0 0 6px #00ff99;
+}
+
+/* Returning user start menu helpers */
+.returning-menu { display: none; }
+.returning-menu .returning-actions { margin-top: 12px; gap: 12px; }
+
+/* Blue style for the "Change name" button */
+#welcomeChangeBtn {
+    background: #1e90ff;
+    color: #fff;
+}
+#welcomeChangeBtn:hover {
+    background: #187bcd;
+}
+#welcomeChangeBtn:active {
+    background: #1569a7;
+}
+
+@media (max-width: 850px) {
+    .container {
+        padding: 10px;
+    }
+    
+    #gameCanvas {
+        width: 100%;
+        height: auto;
+        max-width: 800px;
+    }
+    
+    .game-header h1 {
+        font-size: 2rem;
+    }
+    
+    .difficulty-selector {
+        margin-bottom: 10px;
+    }
+    
+    .difficulty-selector label {
+        font-size: 1rem;
+        display: block;
+        margin-bottom: 5px;
+    }
+    
+    .difficulty-selector select {
+        padding: 6px 10px;
+        font-size: 0.9rem;
+    }
+    
+    .score-display {
+        font-size: 1.2rem;
+        padding: 8px 16px;
+    }
+    
+    .control-hint {
+        font-size: 0.85rem !important;
+    }
+}
+
+@media (max-width: 600px) {
+    .game-header h1 {
+        font-size: 1.5rem;
+        letter-spacing: 1px;
+    }
+    
+    .difficulty-selector label {
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+    
+    .difficulty-selector select {
+        padding: 10px 16px;
+        font-size: 1rem;
+        width: 160px;
+        min-height: 44px; /* Better mobile touch target */
+        padding-right: 36px; /* Account for custom arrow */
+    }
+    
+    .score-display {
+        font-size: 1rem;
+        padding: 6px 12px;
+    }
+    
+    .control-hint {
+        font-size: 0.8rem !important;
+        margin-bottom: 8px !important;
+    }
+    
+    /* Show mobile controls, hide desktop controls */
+    .desktop-controls {
+        display: none;
+    }
+    
+    .mobile-controls {
+        display: block;
+    }
+    
+    .game-controls {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .controls button {
+        padding: 12px 20px;
+        font-size: 1rem;
+        margin: 8px 0;
+        min-width: 160px;
+        min-height: 48px; /* Larger touch target for mobile */
+        /* Enhanced touch optimization for mobile */
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: rgba(0, 165, 80, 0.3);
+    }
+    
+    /* iOS specific smaller canvas styling */
+    .game-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 10px;
+    }
+    
+    #gameCanvas {
+        max-width: 100vw;
+        max-height: 70vh;
+        border: 20px solid #d36c24;
+        border-radius: 4px;
+        /* Make canvas more touch-friendly */
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+}
+
+@media (max-width: 560px) {
+    .start-menu-panel {
+        padding: 32px 28px;
+    }
+
+    .menu-title {
+        font-size: 1.25rem;
+        margin-bottom: 24px;
+    } 
+
+    .menu-start-btn {
+        font-size: 1.05rem;
+        padding: 16px 10px;
+    } 
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+    #gameCanvas {
+        -webkit-transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0);
+        -webkit-perspective: 1000px;
+        perspective: 1000px;
+        will-change: transform;
+        /* Force hardware acceleration */
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+    }
+}
+
+/* Ensure form controls on the overlay are fully interactive on iOS */
+.start-menu-panel input,
+.start-menu-panel button,
+#startMenuForm input,
+#startMenuForm button,
+#menuStartBtn {
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
+    touch-action: manipulation;
+}

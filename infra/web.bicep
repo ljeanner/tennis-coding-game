@@ -10,6 +10,10 @@ param tags object = {}
 @description('The SKU for the static web app')
 param sku string = 'Free'
 
+@description('Optional SQL connection string to expose to the app as AZURE_SQL_CONNECTIONSTRING')
+@secure()
+param sqlConnectionString string = ''
+
 // Static Web App
 resource staticWebApp 'Microsoft.Web/staticSites@2022-03-01' = {
   name: name
@@ -25,6 +29,15 @@ resource staticWebApp 'Microsoft.Web/staticSites@2022-03-01' = {
       outputLocation: 'dist'
       appBuildCommand: 'npm run build'
     }
+  }
+}
+
+// App Settings for SWA (sets environment variables)
+resource staticWebAppConfig 'Microsoft.Web/staticSites/config@2022-03-01' = if (!empty(sqlConnectionString)) {
+  name: 'appsettings'
+  parent: staticWebApp
+  properties: {
+    AZURE_SQL_CONNECTIONSTRING: sqlConnectionString
   }
 }
 

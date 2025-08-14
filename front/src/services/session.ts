@@ -16,12 +16,7 @@ const KEY_NAME = 'ace2ace.playerName';
 
 // API Configuration
 const getApiBaseUrl = (): string => {
-  // In production, this will be set by the Azure Functions integration
-  // In development, use localhost
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return 'http://localhost:7071/api';
-  }
-  // For deployed Static Web App, the API is automatically available at /api
+  // Use path-based API. In dev, Vite proxies /api to Functions; in prod, SWA exposes /api
   return '/api';
 };
 
@@ -220,7 +215,10 @@ export async function setPlayerName(name: string): Promise<Player> {
   try {
     const backendPlayer = await apiRegisterPlayer(id, trimmed);
     // Update local storage with any additional data from backend
-    if (backendPlayer.playerName !== trimmed) {
+    if (backendPlayer.playerId && backendPlayer.playerId !== id) {
+      writeId(backendPlayer.playerId);
+    }
+    if (backendPlayer.playerName && backendPlayer.playerName !== trimmed) {
       writeName(backendPlayer.playerName);
     }
     
@@ -243,6 +241,39 @@ export function ensurePlayer(): Player {
   const player = { playerId: id, playerName: readName() };
   if (player.playerName) emitReady(player);
   return player;
+}
+
+// Ensure a player exists in the backend (upsert) with a non-empty name.
+// If name is missing locally, uses the provided defaultName and persists it.
+export async function ensurePlayerInBackend(defaultName: string = 'Player'): Promise<Player> {
+  let id = readId();
+  if (!id) {
+    id = generateUuid();
+    writeId(id);
+  }
+  let name = readName();
+  if (!name) {
+    name = defaultName;
+    writeName(name);
+  }
+
+  const localPlayer = { playerId: id, playerName: name } as Player;
+
+  try {
+    const backendPlayer = await apiRegisterPlayer(id, name);
+    if (backendPlayer.playerId && backendPlayer.playerId !== id) {
+      writeId(backendPlayer.playerId);
+    }
+    if (backendPlayer.playerName && backendPlayer.playerName !== name) {
+      writeName(backendPlayer.playerName);
+    }
+    if (backendPlayer.playerName) emitReady(backendPlayer);
+    return backendPlayer;
+  } catch (error) {
+    console.warn('Failed to ensure player in backend:', error);
+    if (localPlayer.playerName) emitReady(localPlayer);
+    return localPlayer;
+  }
 }
 
 export async function submitScore(score: number): Promise<Player | null> {

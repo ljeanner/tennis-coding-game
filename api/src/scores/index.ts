@@ -5,6 +5,17 @@ export async function scores(request: HttpRequest, context: InvocationContext): 
   context.log(`HTTP function processed request for url "${request.url}"`);
 
   try {
+    if (request.method === 'OPTIONS') {
+      return {
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type'
+        }
+      };
+    }
+
     if (request.method === 'POST') {
       const body = await request.json() as any;
       
@@ -44,7 +55,7 @@ export async function scores(request: HttpRequest, context: InvocationContext): 
 }
 
 app.http('scores', {
-  methods: ['POST'],
+  methods: ['POST', 'OPTIONS'],
   authLevel: 'anonymous',
   route: 'scores',
   handler: scores

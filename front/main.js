@@ -1,4 +1,4 @@
-import { ensurePlayer, setPlayerName, getPlayer, onPlayerReady } from './src/services/session';
+import { ensurePlayer, setPlayerName, getPlayer, onPlayerReady, submitScore, ensurePlayerInBackend } from './src/services/session';
 
 // Game state and configuration
 class TennisGame {
@@ -550,21 +550,24 @@ class TennisGame {
         }
         const name = prompt('Enter your name:', this.playerName);
         if (name && name.trim()) {
-            const p = setPlayerName(name.trim());
-            this.playerName = p.playerName || this.playerName;
-            this.updateScoreDisplay();
+            // updated: set name in backend too
+            (async () => {
+                const p = await setPlayerName(name.trim());
+                this.playerName = p.playerName || this.playerName;
+                this.updateScoreDisplay();
+            })();
         }
     }
 
     // New: confirm start from the start menu overlay
-    confirmStartFromMenu() {
+    async confirmStartFromMenu() {
         // Avoid double-starts
         if (this.gameStarted) return;
         // Read player name from input if available
         let name = this.playerNameInput && this.playerNameInput.value ? this.playerNameInput.value.trim() : '';
         if (!name) name = 'Player';
-        const p = setPlayerName(name);
-        this.playerName = p.playerName || name;
+        const p = await setPlayerName(name);
+        this.playerName = (p && p.playerName) ? p.playerName : name;
         this.updateScoreDisplay();
         // Hide overlay
         this.hideStartMenu();
@@ -966,6 +969,8 @@ class TennisGame {
             this.animationState = 'victory';
             this.animationFrame = 0;
             this.initConfetti();
+            // submit final score
+            this.submitFinalScore();
         } else if (this.copilotScore >= this.winningScore) {
             // Copilot wins!
             this.gameEnded = true;
@@ -973,9 +978,21 @@ class TennisGame {
             this.gameRunning = false;
             this.animationState = 'defeat';
             this.animationFrame = 0;
+            // submit final score even on loss
+            this.submitFinalScore();
         }
     }
-    
+
+    // Submit the final score to the backend once per game
+    submitFinalScore() {
+        if (this.finalScoreSubmitted) return;
+        this.finalScoreSubmitted = true;
+        // Fire-and-forget; backend will update best score/history
+        submitScore(this.playerScore).catch(err => {
+            console.warn('Failed to submit final score:', err);
+        });
+    }
+
     showDifficultyMessage(difficulty) {
         // Create temporary message overlay
         const canvas = this.canvas;
@@ -1019,6 +1036,10 @@ class TennisGame {
         this.isCountingDown = true;
         this.countdownText = '1';
         this.updateButtonStates();
+
+        // Ensure player exists in backend before the match actually starts
+        const nameToUse = (this.playerName && this.playerName.trim()) ? this.playerName.trim() : 'Player';
+        ensurePlayerInBackend(nameToUse).catch(err => console.warn('Failed to ensure player before start:', err));
 
         const steps = ['1', '2', '3'];
         let idx = 0;
@@ -1144,6 +1165,9 @@ class TennisGame {
         this.fadeOpacity = 1;
         this.confetti = [];
         
+        // Reset duplicate submission guard
+        this.finalScoreSubmitted = false;
+
         // Apply current difficulty settings
         this.applyDifficultySettings();
         

@@ -1,0 +1,27 @@
+{
+  "name": "ace2ace-api",
+  "version": "1.0.0",
+  "description": "Azure Functions API for Ace2Ace Tennis Game",
+  "main": "dist/app.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "prestart": "npm run build",
+    "start": "func start",
+    "test": "echo \"No tests yet\"",
+    "build:production": "npm run build"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.0.0",
+    "mssql": "^10.0.1"
+  },
+  "devDependencies": {
+    "@azure/functions": "^4.0.0",
+    "@types/node": "^20.0.0",
+    "azure-functions-core-tools": "^4.0.5455",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

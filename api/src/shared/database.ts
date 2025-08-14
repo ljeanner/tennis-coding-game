@@ -169,9 +169,23 @@ export async function updatePlayerScore(playerId: string, score: number): Promis
       .input('playerId', sql.VarChar(36), playerId)
       .input('score', sql.Int, score)
       .query(`
+        BEGIN TRAN;
+        
         DECLARE @pid UNIQUEIDENTIFIER = TRY_CONVERT(UNIQUEIDENTIFIER, @playerId);
-        IF @pid IS NULL THROW 50001, 'Invalid playerId', 1;
+        IF @pid IS NULL 
+        BEGIN
+          ROLLBACK TRAN;
+          THROW 50001, 'Invalid playerId', 1;
+        END
 
+        -- Ensure player exists to avoid FK violation
+        IF NOT EXISTS (SELECT 1 FROM Players WHERE PlayerId = @pid)
+        BEGIN
+          INSERT INTO Players (PlayerId, PlayerName, CreatedAt, LastSeenAt)
+          VALUES (@pid, N'Player', GETDATE(), GETDATE());
+        END
+
+        -- Update aggregate stats
         UPDATE Players 
         SET 
           CurrentScore = @score,
@@ -180,8 +194,11 @@ export async function updatePlayerScore(playerId: string, score: number): Promis
           LastSeenAt = GETDATE()
         WHERE PlayerId = @pid;
 
+        -- Insert score history row
         INSERT INTO GameScores (PlayerId, Score)
         VALUES (@pid, @score);
+
+        COMMIT TRAN;
       `);
 
     const player = await getPlayer(playerId);
@@ -191,6 +208,8 @@ export async function updatePlayerScore(playerId: string, score: number): Promis
 
     return player;
   } catch (error) {
+    // Best-effort rollback if transaction still open
+    try { await pool.request().query('IF @@TRANCOUNT > 0 ROLLBACK TRAN;'); } catch {}
     console.error('Failed to update player score:', error);
     throw error;
   }

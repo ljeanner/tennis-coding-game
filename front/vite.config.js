@@ -7,7 +7,15 @@ export default defineConfig({
   // Development server configuration
   server: {
     port: 3000,
-    open: true
+    open: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:7071',
+        changeOrigin: true,
+        // keep path as-is (already starts with /api)
+        rewrite: (path) => path
+      }
+    }
   },
   
   // Build configuration

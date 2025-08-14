@@ -72,6 +72,7 @@ module functions 'function.bicep' = {
     baseTags: tags
     runtime: 'node'
     sqlConnectionString: sqlConnectionString
+    allowedOrigins: [ web.outputs.WEB_URI ]
   }
 }
 

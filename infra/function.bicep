@@ -22,6 +22,9 @@ param runtime string = 'node'
 @secure()
 param sqlConnectionString string
 
+@description('Allowed CORS origins for the Function App')
+param allowedOrigins array = []
+
 var functionAppName = appName
 var hostingPlanName = 'plan-${appName}'
 var applicationInsightsName = 'ai-${appName}'
@@ -107,14 +110,25 @@ resource functionApp 'Microsoft.Web/sites@2022-03-01' = {
           name: 'AZURE_SQL_CONNECTIONSTRING'
           value: sqlConnectionString
         }
+        // Prevent Kudu from running server-side builds and use package deployment
+        {
+          name: 'WEBSITE_RUN_FROM_PACKAGE'
+          value: '1'
+        }
+        {
+          name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
+          value: 'false'
+        }
+        // Increase Kudu command idle timeout to allow longer deployments
+        {
+          name: 'SCM_COMMAND_IDLE_TIMEOUT'
+          value: '1800'
+        }
       ]
       ftpsState: 'FtpsOnly'
       minTlsVersion: '1.2'
       cors: {
-        allowedOrigins: [
-          'https://portal.azure.com'
-          '*'
-        ]
+        allowedOrigins: union(allowedOrigins, [ 'https://portal.azure.com' ])
         supportCredentials: false
       }
     }

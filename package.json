@@ -5,12 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "npm run dev --prefix front",
-    "dev:api": "nodemon server/index.js",
+    "dev:api": "npm run start --prefix api",
     "dev:all": "concurrently -k \"npm run dev\" \"npm run dev:api\"",
     "build": "npm run build --prefix front",
     "preview": "npm run preview --prefix front",
     "start": "npm run start --prefix front",
-    "start:api": "node server/index.js"
+    "start:api": "npm run start --prefix api"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

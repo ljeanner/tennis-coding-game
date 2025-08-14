@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build output
+front/dist/
+api/dist/
+dist/
+
+# Local env & secrets
+.env
+.env.*
+api/local.settings.json
+.azure/
+.azurite/
+
+# Editor
+.vscode/
+
+# Coverage
+coverage/
+.nyc_output/

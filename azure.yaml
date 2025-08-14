@@ -10,3 +10,7 @@ services:
     host: staticwebapp
     language: js
     dist: dist
+  api:
+    project: ./api
+    host: function
+    language: ts

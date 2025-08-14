@@ -1,13 +1,29 @@
-// Session management for Ace2Ace
-// Stores persistent player identity in localStorage
+// Session management for Ace2Ace with Azure Functions backend integration
+// Stores persistent player identity in localStorage and syncs with backend
 
 export type Player = {
   playerId: string;
   playerName: string;
+  currentScore?: number;
+  bestScore?: number;
+  gamesPlayed?: number;
+  createdAt?: Date;
+  lastSeenAt?: Date;
 };
 
 const KEY_ID = 'ace2ace.playerId';
 const KEY_NAME = 'ace2ace.playerName';
+
+// API Configuration
+const getApiBaseUrl = (): string => {
+  // In production, this will be set by the Azure Functions integration
+  // In development, use localhost
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:7071/api';
+  }
+  // For deployed Static Web App, the API is automatically available at /api
+  return '/api';
+};
 
 // Robust storage wrapper (localStorage → sessionStorage → cookies → in-memory)
 const memStore: Record<string, string> = {};
@@ -100,6 +116,78 @@ function emitReady(player: Player) {
   });
 }
 
+// API functions
+async function apiRegisterPlayer(playerId: string, playerName: string): Promise<Player> {
+  const response = await fetch(`${getApiBaseUrl()}/players`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      playerId,
+      playerName
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to register player: ${response.statusText}`);
+  }
+
+  return await response.json();
+}
+
+async function apiGetPlayer(playerId: string): Promise<Player | null> {
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/players/${playerId}`);
+    
+    if (response.status === 404) {
+      return null;
+    }
+    
+    if (!response.ok) {
+      throw new Error(`Failed to get player: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.warn('Failed to fetch player from API:', error);
+    return null;
+  }
+}
+
+async function apiSubmitScore(playerId: string, score: number): Promise<Player> {
+  const response = await fetch(`${getApiBaseUrl()}/scores`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      playerId,
+      score
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to submit score: ${response.statusText}`);
+  }
+
+  return await response.json();
+}
+
+export async function getLeaderboard(limit: number = 10): Promise<Player[]> {
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/leaderboard?limit=${limit}`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to get leaderboard: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.warn('Failed to fetch leaderboard from API:', error);
+    return [];
+  }
+}
 export function onPlayerReady(cb: (player: Player) => void) {
   callbacks.add(cb);
   // If already ready (id + name exist), notify immediately on next tick
@@ -117,7 +205,7 @@ export function getPlayer(): Player {
   return { playerId: id, playerName: name };
 }
 
-export function setPlayerName(name: string): Player {
+export async function setPlayerName(name: string): Promise<Player> {
   const trimmed = (name || '').trim();
   let id = readId();
   if (!id) {
@@ -125,9 +213,25 @@ export function setPlayerName(name: string): Player {
     writeId(id);
   }
   writeName(trimmed);
-  const player = { playerId: id, playerName: trimmed };
-  if (player.playerName) emitReady(player);
-  return player;
+  
+  const localPlayer = { playerId: id, playerName: trimmed };
+  
+  // Sync with backend
+  try {
+    const backendPlayer = await apiRegisterPlayer(id, trimmed);
+    // Update local storage with any additional data from backend
+    if (backendPlayer.playerName !== trimmed) {
+      writeName(backendPlayer.playerName);
+    }
+    
+    if (backendPlayer.playerName) emitReady(backendPlayer);
+    return backendPlayer;
+  } catch (error) {
+    console.warn('Failed to sync player with backend:', error);
+    // Fall back to local player
+    if (localPlayer.playerName) emitReady(localPlayer);
+    return localPlayer;
+  }
 }
 
 export function ensurePlayer(): Player {
@@ -139,4 +243,35 @@ export function ensurePlayer(): Player {
   const player = { playerId: id, playerName: readName() };
   if (player.playerName) emitReady(player);
   return player;
+}
+
+export async function submitScore(score: number): Promise<Player | null> {
+  const player = getPlayer();
+  if (!player.playerId || !player.playerName) {
+    console.warn('Cannot submit score: no player registered');
+    return null;
+  }
+
+  try {
+    const updatedPlayer = await apiSubmitScore(player.playerId, score);
+    return updatedPlayer;
+  } catch (error) {
+    console.warn('Failed to submit score to backend:', error);
+    return null;
+  }
+}
+
+export async function syncPlayerData(): Promise<Player | null> {
+  const player = getPlayer();
+  if (!player.playerId) {
+    return null;
+  }
+
+  try {
+    const backendPlayer = await apiGetPlayer(player.playerId);
+    return backendPlayer;
+  } catch (error) {
+    console.warn('Failed to sync player data:', error);
+    return null;
+  }
 }

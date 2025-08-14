@@ -94,21 +94,40 @@ export async function upsertPlayer(playerId: string, playerName: string): Promis
       .input('playerName', sql.NVarChar(100), playerName)
       .query(`
         DECLARE @pid UNIQUEIDENTIFIER = TRY_CONVERT(UNIQUEIDENTIFIER, @playerId);
-        IF @pid IS NULL SET @pid = NEWID();
-        MERGE Players AS target
-        USING (SELECT @pid AS PlayerId, @playerName AS PlayerName) AS source
-        ON target.PlayerId = source.PlayerId
-        WHEN MATCHED THEN
-          UPDATE SET 
-            PlayerName = source.PlayerName,
-            LastSeenAt = GETDATE()
-        WHEN NOT MATCHED THEN
-          INSERT (PlayerId, PlayerName, CreatedAt, LastSeenAt)
-          VALUES (source.PlayerId, source.PlayerName, GETDATE(), GETDATE());
+        DECLARE @existingName NVARCHAR(100) = (
+          SELECT PlayerName FROM Players WHERE PlayerId = @pid
+        );
 
-        SELECT PlayerId, PlayerName, CurrentScore, BestScore, GamesPlayed, CreatedAt, LastSeenAt
-        FROM Players 
-        WHERE PlayerId = @pid;
+        -- If the provided ID exists but the name is different, create a NEW player with a NEW ID
+        IF @existingName IS NOT NULL AND @existingName <> @playerName
+        BEGIN
+          DECLARE @newPid UNIQUEIDENTIFIER = NEWID();
+          INSERT INTO Players (PlayerId, PlayerName, CreatedAt, LastSeenAt)
+          VALUES (@newPid, @playerName, GETDATE(), GETDATE());
+
+          SELECT PlayerId, PlayerName, CurrentScore, BestScore, GamesPlayed, CreatedAt, LastSeenAt
+          FROM Players 
+          WHERE PlayerId = @newPid;
+        END
+        ELSE
+        BEGIN
+          -- Standard upsert by PlayerId
+          IF @pid IS NULL SET @pid = NEWID();
+          MERGE Players AS target
+          USING (SELECT @pid AS PlayerId, @playerName AS PlayerName) AS source
+          ON target.PlayerId = source.PlayerId
+          WHEN MATCHED THEN
+            UPDATE SET 
+              PlayerName = source.PlayerName,
+              LastSeenAt = GETDATE()
+          WHEN NOT MATCHED THEN
+            INSERT (PlayerId, PlayerName, CreatedAt, LastSeenAt)
+            VALUES (source.PlayerId, source.PlayerName, GETDATE(), GETDATE());
+
+          SELECT PlayerId, PlayerName, CurrentScore, BestScore, GamesPlayed, CreatedAt, LastSeenAt
+          FROM Players 
+          WHERE PlayerId = @pid;
+        END
       `);
 
     const player = result.recordset[0];

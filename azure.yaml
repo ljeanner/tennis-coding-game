@@ -12,5 +12,5 @@ services:
     dist: dist
   api:
     project: ./api
-    host: function
+    host: appservice
     language: ts

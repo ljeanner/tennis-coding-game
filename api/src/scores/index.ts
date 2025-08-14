@@ -1,62 +1,31 @@
-import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { updatePlayerScore, getPlayerScoreHistory } from '../shared/database';
+import express from 'express'
+const router = express.Router()
 
-export async function scores(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-  context.log(`HTTP function processed request for url "${request.url}"`);
+import { updatePlayerScore, getPlayerScoreHistory } from '../shared/database'
 
+router.post('/', async (req, res) => {
   try {
-    if (request.method === 'OPTIONS') {
-      return {
-        status: 204,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type'
-        }
-      };
-    }
+    const body = req.body as any
+    if (!body.playerId || typeof body.score !== 'number') return res.status(400).json({ error: 'playerId and score are required' })
 
-    if (request.method === 'POST') {
-      const body = await request.json() as any;
-      
-      if (!body.playerId || typeof body.score !== 'number') {
-        return {
-          status: 400,
-          jsonBody: { error: 'playerId and score are required' }
-        };
-      }
-
-      const updatedPlayer = await updatePlayerScore(body.playerId, body.score);
-
-      return {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type'
-        },
-        jsonBody: updatedPlayer
-      };
-    }
-
-    return {
-      status: 405,
-      jsonBody: { error: 'Method not allowed' }
-    };
-
-  } catch (error) {
-    context.log('Error in scores function:', error);
-    return {
-      status: 500,
-      jsonBody: { error: 'Internal server error' }
-    };
+    const updatedPlayer = await updatePlayerScore(body.playerId, body.score)
+    return res.json(updatedPlayer)
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ error: 'Internal server error' })
   }
-}
+})
 
-app.http('scores', {
-  methods: ['POST', 'OPTIONS'],
-  authLevel: 'anonymous',
-  route: 'scores',
-  handler: scores
-});
+// If you need score history
+router.get('/:playerId/history', async (req, res) => {
+  try {
+    const playerId = req.params.playerId
+    const history = await getPlayerScoreHistory(playerId)
+    return res.json(history)
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+export default router

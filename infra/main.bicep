@@ -45,8 +45,8 @@ resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
 // Web service name
 var webServiceName = 'swa-${resourceToken}'
 
-// Function app service name  
-var functionServiceName = 'func-${resourceToken}'
+// App Service name for API
+var appServiceName = 'api-${resourceToken}'
 
 // Create the web app resources
 module web 'web.bicep' = {
@@ -61,16 +61,15 @@ module web 'web.bicep' = {
   }
 }
 
-// Create the function app resources
-module functions 'function.bicep' = {
-  name: 'functions'
+// Create the App Service resources
+module appservice 'appservice.bicep' = {
+  name: 'appservice'
   scope: rg
   params: {
-    appName: !empty(functionServiceName) ? functionServiceName : 'func-${resourceToken}'
+    appName: !empty(appServiceName) ? appServiceName : 'api-${resourceToken}'
     location: location
     tags: union(tags, { 'azd-service-name': 'api' })
     baseTags: tags
-    runtime: 'node'
     sqlConnectionString: sqlConnectionString
     allowedOrigins: [ web.outputs.WEB_URI ]
   }
@@ -99,5 +98,5 @@ output AZURE_LOCATION string = location
 output AZURE_TENANT_ID string = tenant().tenantId
 output WEB_URI string = web.outputs.WEB_URI
 output SERVICE_WEB_NAME string = web.outputs.WEB_NAME
-output FUNCTION_APP_NAME string = functions.outputs.functionAppName
-output FUNCTION_APP_URI string = functions.outputs.functionAppUrl
+output APP_SERVICE_NAME string = appservice.outputs.appServiceName
+output APP_SERVICE_URI string = appservice.outputs.appServiceUrl

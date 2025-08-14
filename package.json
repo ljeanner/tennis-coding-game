@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "npm run dev --prefix front",
-    "dev:api": "npm run start --prefix api",
+    "dev:api": "nodemon --watch api/src --ext ts --exec \"npm run build --prefix api && node api/dist/app.js\"",
     "dev:all": "concurrently -k \"npm run dev\" \"npm run dev:api\"",
     "build": "npm run build --prefix front",
     "preview": "npm run preview --prefix front",

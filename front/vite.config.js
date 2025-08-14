@@ -10,10 +10,11 @@ export default defineConfig({
     open: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:7071',
+        // Proxy target should point to the API dev server (not the Vite server)
+        target: 'http://localhost:7000',
         changeOrigin: true,
-        // keep path as-is (already starts with /api)
-        rewrite: (path) => path
+        // remove the leading /api before forwarding to the API server
+        rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
   },

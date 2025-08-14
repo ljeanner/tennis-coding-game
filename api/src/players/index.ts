@@ -1,81 +1,33 @@
-import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { getPlayer, upsertPlayer } from '../shared/database';
+import express from 'express'
+const router = express.Router()
 
-export async function players(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-  context.log(`HTTP function processed request for url "${request.url}"`);
+import { getPlayer, upsertPlayer } from '../shared/database'
 
-  const playerId = request.params.playerId;
+router.get('/:playerId', async (req, res) => {
+  const playerId = req.params.playerId
+  if (!playerId) return res.status(400).json({ error: 'Player ID is required' })
 
   try {
-    if (request.method === 'GET') {
-      if (!playerId) {
-        return {
-          status: 400,
-          jsonBody: { error: 'Player ID is required' }
-        };
-      }
-
-      const player = await getPlayer(playerId);
-      if (!player) {
-        return {
-          status: 404,
-          jsonBody: { error: 'Player not found' }
-        };
-      }
-
-      return {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type'
-        },
-        jsonBody: player
-      };
-    }
-
-    if (request.method === 'POST') {
-      const body = await request.json() as any;
-      
-      if (!body.playerId || !body.playerName) {
-        return {
-          status: 400,
-          jsonBody: { error: 'playerId and playerName are required' }
-        };
-      }
-
-      const player = await upsertPlayer(body.playerId, body.playerName);
-
-      return {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type'
-        },
-        jsonBody: player
-      };
-    }
-
-    return {
-      status: 405,
-      jsonBody: { error: 'Method not allowed' }
-    };
-
-  } catch (error) {
-    context.log('Error in players function:', error);
-    return {
-      status: 500,
-      jsonBody: { error: 'Internal server error' }
-    };
+    const player = await getPlayer(playerId)
+    if (!player) return res.status(404).json({ error: 'Player not found' })
+    return res.json(player)
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ error: 'Internal server error' })
   }
-}
+})
 
-app.http('players', {
-  methods: ['GET', 'POST'],
-  authLevel: 'anonymous',
-  route: 'players/{playerId?}',
-  handler: players
-});
+router.post('/', async (req, res) => {
+  const body = req.body as any
+  if (!body.playerId || !body.playerName) return res.status(400).json({ error: 'playerId and playerName are required' })
+
+  try {
+    const player = await upsertPlayer(body.playerId, body.playerName)
+    return res.json(player)
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+export default router

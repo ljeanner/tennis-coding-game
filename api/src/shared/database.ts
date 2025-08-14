@@ -60,6 +60,21 @@ async function initializeSchema(pool: sql.ConnectionPool): Promise<void> {
       END
     `);
 
+    // Create Matches table for match duration and difficulty
+    await request.query(`
+      IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Matches' AND xtype='U')
+      BEGIN
+        CREATE TABLE Matches (
+          MatchId UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+          PlayerId UNIQUEIDENTIFIER NOT NULL,
+          Difficulty NVARCHAR(50) NOT NULL,
+          DurationMs INT NOT NULL,
+          CreatedAt DATETIME2 DEFAULT GETDATE(),
+          FOREIGN KEY (PlayerId) REFERENCES Players(PlayerId)
+        )
+      END
+    `);
+
     console.log('Database schema initialized successfully');
   } catch (error) {
     console.error('Failed to initialize database schema:', error);
@@ -82,6 +97,14 @@ export interface GameScore {
   playerId: string;
   score: number;
   gameDate: Date;
+}
+
+export interface Match {
+  matchId: string;
+  playerId: string;
+  difficulty: string;
+  durationMs: number;
+  createdAt: Date;
 }
 
 export async function upsertPlayer(playerId: string, playerName: string): Promise<Player> {
@@ -286,6 +309,48 @@ export async function getLeaderboard(limit: number = 10): Promise<Player[]> {
     }));
   } catch (error) {
     console.error('Failed to get leaderboard:', error);
+    throw error;
+  }
+}
+
+export async function recordMatch(playerId: string, difficulty: string, durationMs: number): Promise<Match> {
+  const pool = await getDbPool();
+  const request = pool.request();
+
+  try {
+    const result = await request
+      .input('playerId', sql.VarChar(36), playerId)
+      .input('difficulty', sql.NVarChar(50), difficulty)
+      .input('durationMs', sql.Int, durationMs)
+      .query(`
+        DECLARE @pid UNIQUEIDENTIFIER = TRY_CONVERT(UNIQUEIDENTIFIER, @playerId);
+        IF @pid IS NULL 
+        BEGIN
+          THROW 50002, 'Invalid playerId', 1;
+        END
+
+        -- Ensure player exists
+        IF NOT EXISTS (SELECT 1 FROM Players WHERE PlayerId = @pid)
+        BEGIN
+          INSERT INTO Players (PlayerId, PlayerName, CreatedAt, LastSeenAt)
+          VALUES (@pid, N'Player', GETDATE(), GETDATE());
+        END
+
+        INSERT INTO Matches (PlayerId, Difficulty, DurationMs)
+        OUTPUT inserted.MatchId, inserted.PlayerId, inserted.Difficulty, inserted.DurationMs, inserted.CreatedAt
+        VALUES (@pid, @difficulty, @durationMs);
+      `);
+
+    const rec = result.recordset[0];
+    return {
+      matchId: rec.MatchId,
+      playerId: rec.PlayerId,
+      difficulty: rec.Difficulty,
+      durationMs: rec.DurationMs,
+      createdAt: rec.CreatedAt
+    };
+  } catch (error) {
+    console.error('Failed to record match:', error);
     throw error;
   }
 }

@@ -10,6 +10,7 @@ import cors from 'cors';
 import playersRouter from './players';
 import scoresRouter from './scores';
 import leaderboardRouter from './leaderboard';
+import matchesRouter from './matches';
 import { getDbPool } from './shared/database';
 
 const app = express();
@@ -19,6 +20,7 @@ app.use(express.json());
 app.use('/players', playersRouter);
 app.use('/scores', scoresRouter);
 app.use('/leaderboard', leaderboardRouter);
+app.use('/matches', matchesRouter);
 
 // health check
 app.get('/health', (_req, res) => res.status(200).send('OK'));

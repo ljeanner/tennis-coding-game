@@ -550,6 +550,48 @@ body {
     background: #1569a7;
 }
 
+/* Timers Leaderboard styles */
+.leaderboard-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.7);
+    z-index: 3000;
+    padding: 20px;
+}
+.leaderboard-overlay.hide { display: none; }
+.leaderboard-panel {
+    background: linear-gradient(180deg,#002a18,#003d1f);
+    border: 3px solid #00A550;
+    padding: 20px;
+    width: 420px;
+    max-width: 95%;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    color: #fff;
+}
+.leaderboard-header {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:12px;
+}
+.leaderboard-header h2 { margin:0; }
+.close-btn {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+.leaderboard-controls { margin-bottom: 8px; display:flex; gap:8px; align-items:center; }
+.timers-list { list-style: decimal inside; padding:0; margin: 10px 0 12px 0; color:#fff; }
+.timers-list li { padding:8px 6px; border-bottom: 1px dashed rgba(255,255,255,0.06); display:flex; justify-content:space-between; align-items:center; }
+.timers-list li .meta { color: rgba(255,255,255,0.7); font-size:0.9rem; }
+.leaderboard-footer { text-align:center; color: rgba(255,255,255,0.6); font-size:0.85rem; }
+
 @media (max-width: 850px) {
     .container {
         padding: 10px;

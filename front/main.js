@@ -1,4 +1,4 @@
-import { ensurePlayer, setPlayerName, getPlayer, onPlayerReady, submitScore, ensurePlayerInBackend, submitMatch } from './src/services/session';
+import { ensurePlayer, setPlayerName, getPlayer, onPlayerReady, submitScore, ensurePlayerInBackend, submitMatch, getTimersLeaderboard } from './src/services/session';
 
 // Game state and configuration
 class TennisGame {
@@ -455,6 +455,67 @@ class TennisGame {
                 this.confirmStartFromMenu();
             });
         }
+
+        // Timers leaderboard UI
+        const timersBtn = document.getElementById('timersLeaderboardBtn');
+        const overlay = document.getElementById('timersLeaderboardOverlay');
+        const closeBtn = document.getElementById('closeTimersBtn');
+        const difficultySelect = document.getElementById('leaderboardDifficulty');
+        const listEl = document.getElementById('timersList');
+
+        function showOverlay() {
+            overlay.classList.remove('hide');
+            overlay.setAttribute('aria-hidden', 'false');
+            // Load default (current difficulty) timers
+            loadTimers(difficultySelect.value || null);
+        }
+        function hideOverlay() {
+            overlay.classList.add('hide');
+            overlay.setAttribute('aria-hidden', 'true');
+            listEl.innerHTML = '';
+        }
+
+        async function loadTimers(difficulty) {
+            listEl.innerHTML = '<li>Loading…</li>';
+            try {
+                const rows = await getTimersLeaderboard(difficulty || null, 5);
+                if (!rows || rows.length === 0) {
+                    listEl.innerHTML = '<li>No records yet</li>';
+                    return;
+                }
+                listEl.innerHTML = '';
+                rows.forEach(r => {
+                    const li = document.createElement('li');
+                    const name = document.createElement('span');
+                    name.textContent = r.playerName || r.playerId;
+                    const meta = document.createElement('span');
+                    meta.className = 'meta';
+                    // Format ms -> mm:ss.mmm
+                    const ms = Number(r.bestDurationMs) || 0;
+                    const minutes = Math.floor(ms / 60000);
+                    const seconds = Math.floor((ms % 60000) / 1000);
+                    const millis = ms % 1000;
+                    meta.textContent = `${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}.${String(millis).padStart(3,'0')}`;
+                    li.appendChild(name);
+                    li.appendChild(meta);
+                    listEl.appendChild(li);
+                });
+            } catch (e) {
+                listEl.innerHTML = '<li>Failed to load leaderboard</li>';
+                console.warn(e);
+            }
+        }
+
+        timersBtn?.addEventListener('click', () => showOverlay());
+        closeBtn?.addEventListener('click', () => hideOverlay());
+        difficultySelect?.addEventListener('change', (ev) => loadTimers(ev.target.value || null));
+
+        // Accessibility: close overlay on ESC
+        document.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Escape' && !overlay.classList.contains('hide')) {
+                hideOverlay();
+            }
+        });
     }
     
     setupTouchControls() {
@@ -1694,5 +1755,65 @@ class TennisGame {
 
 // Initialize the game when the page loads
 document.addEventListener('DOMContentLoaded', () => {
-    new TennisGame();
+    const game = new TennisGame();
+
+    // Timers leaderboard UI
+    const timersBtn = document.getElementById('timersLeaderboardBtn');
+    const overlay = document.getElementById('timersLeaderboardOverlay');
+    const closeBtn = document.getElementById('closeTimersBtn');
+    const difficultySelect = document.getElementById('leaderboardDifficulty');
+    const listEl = document.getElementById('timersList');
+
+    function showOverlay() {
+        overlay.classList.remove('hide');
+        overlay.setAttribute('aria-hidden', 'false');
+        // Load default (current difficulty) timers
+        loadTimers(difficultySelect.value || null);
+    }
+    function hideOverlay() {
+        overlay.classList.add('hide');
+        overlay.setAttribute('aria-hidden', 'true');
+        listEl.innerHTML = '';
+    }
+
+    async function loadTimers(difficulty) {
+        listEl.innerHTML = '<li>Loading…</li>';
+        try {
+            const rows = await getTimersLeaderboard(difficulty || null, 5);
+            if (!rows || rows.length === 0) {
+                listEl.innerHTML = '<li>No records yet</li>';
+                return;
+            }
+            listEl.innerHTML = '';
+            rows.forEach(r => {
+                const li = document.createElement('li');
+                const name = document.createElement('span');
+                name.textContent = r.playerName || r.playerId;
+                const meta = document.createElement('span');
+                meta.className = 'meta';
+                const ms = Number(r.bestDurationMs) || 0;
+                const minutes = Math.floor(ms / 60000);
+                const seconds = Math.floor((ms % 60000) / 1000);
+                const millis = ms % 1000;
+                meta.textContent = `${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}.${String(millis).padStart(3,'0')}`;
+                li.appendChild(name);
+                li.appendChild(meta);
+                listEl.appendChild(li);
+            });
+        } catch (e) {
+            listEl.innerHTML = '<li>Failed to load leaderboard</li>';
+            console.warn(e);
+        }
+    }
+
+    timersBtn?.addEventListener('click', () => showOverlay());
+    closeBtn?.addEventListener('click', () => hideOverlay());
+    difficultySelect?.addEventListener('change', (ev) => loadTimers(ev.target.value || null));
+
+    // Accessibility: close overlay on ESC
+    document.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Escape' && !overlay.classList.contains('hide')) {
+            hideOverlay();
+        }
+    });
 });

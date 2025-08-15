@@ -11,6 +11,13 @@ export type Player = {
   lastSeenAt?: Date;
 };
 
+export type BestTimer = {
+  playerId: string;
+  playerName: string | null;
+  bestDurationMs: number;
+  achievedAt: string | null; // ISO string from server
+};
+
 const KEY_ID = 'ace2ace.playerId';
 const KEY_NAME = 'ace2ace.playerName';
 
@@ -196,6 +203,21 @@ export async function getLeaderboard(limit: number = 10): Promise<Player[]> {
     return [];
   }
 }
+
+export async function getTimersLeaderboard(difficulty: string | null = null, limit: number = 5): Promise<BestTimer[]> {
+  try {
+    const q = new URLSearchParams();
+    if (difficulty) q.set('difficulty', difficulty);
+    if (limit) q.set('limit', String(limit));
+    const response = await fetch(`${getApiBaseUrl()}/leaderboard/timers?` + q.toString());
+    if (!response.ok) throw new Error(`Failed to get timers leaderboard: ${response.statusText}`);
+    return await response.json();
+  } catch (error) {
+    console.warn('Failed to fetch timers leaderboard from API:', error);
+    return [];
+  }
+}
+
 export function onPlayerReady(cb: (player: Player) => void) {
   callbacks.add(cb);
   // If already ready (id + name exist), notify immediately on next tick

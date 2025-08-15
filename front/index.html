@@ -44,6 +44,7 @@
                 <button id="newGameBtn">New Game</button>
                 <button id="playerNameBtn">Change Player Name</button>
                 <button id="muteBtn" title="Toggle sound">🔊</button>
+                <button id="timersLeaderboardBtn" title="Show best timers">⏱️ Timers Leaderboard</button>
             </div>
         </div>
     </div>
@@ -68,6 +69,30 @@
                 <button id="menuStartBtn" class="menu-start-btn" type="submit" aria-label="Start Game">▶ Enter Game</button>
             </form>
             <p class="menu-hint">Press ENTER or tap the button to begin</p>
+        </div>
+    </div>
+    <!-- Timers Leaderboard Overlay -->
+    <div id="timersLeaderboardOverlay" class="leaderboard-overlay hide" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="leaderboard-panel">
+            <header class="leaderboard-header">
+                <h2>Top Timers</h2>
+                <button id="closeTimersBtn" class="close-btn" aria-label="Close leaderboard">✕</button>
+            </header>
+            <div class="leaderboard-controls">
+                <label for="leaderboardDifficulty">Difficulty:</label>
+                <select id="leaderboardDifficulty">
+                    <option value="">All</option>
+                    <option value="beginner">Beginner</option>
+                    <option value="advanced">Advanced</option>
+                    <option value="expert">Expert</option>
+                </select>
+            </div>
+            <ol id="timersList" class="timers-list" aria-live="polite">
+                <!-- Filled dynamically -->
+            </ol>
+            <div class="leaderboard-footer">
+                <small>Showing best (fastest) match time per player. Limit: top 5.</small>
+            </div>
         </div>
     </div>
     <script type="module" src="./main.js"></script>

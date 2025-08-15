@@ -107,6 +107,14 @@ export interface Match {
   createdAt: Date;
 }
 
+// New: Best timer per player interface
+export interface BestTimer {
+  playerId: string;
+  playerName: string | null;
+  bestDurationMs: number;
+  achievedAt: Date | null;
+}
+
 export async function upsertPlayer(playerId: string, playerName: string): Promise<Player> {
   const pool = await getDbPool();
   const request = pool.request();
@@ -351,6 +359,45 @@ export async function recordMatch(playerId: string, difficulty: string, duration
     };
   } catch (error) {
     console.error('Failed to record match:', error);
+    throw error;
+  }
+}
+
+// New: return the best (minimum) DurationMs per player for a given difficulty
+export async function getBestMatchTimers(difficulty: string | null, limit: number = 5): Promise<BestTimer[]> {
+  const pool = await getDbPool();
+  const request = pool.request();
+
+  try {
+    // Accept null/undefined difficulty to mean "any difficulty"
+    if (difficulty == null) {
+      request.input('difficulty', sql.NVarChar(50), null);
+    } else {
+      request.input('difficulty', sql.NVarChar(50), difficulty);
+    }
+    request.input('limit', sql.Int, limit);
+
+    const result = await request.query(`
+      SELECT TOP (@limit)
+        m.PlayerId,
+        p.PlayerName,
+        MIN(m.DurationMs) AS BestDurationMs,
+        MIN(m.CreatedAt) AS AchievedAt
+      FROM Matches m
+      LEFT JOIN Players p ON p.PlayerId = m.PlayerId
+      WHERE (@difficulty IS NULL OR m.Difficulty = @difficulty)
+      GROUP BY m.PlayerId, p.PlayerName
+      ORDER BY BestDurationMs ASC
+    `);
+
+    return result.recordset.map(r => ({
+      playerId: r.PlayerId,
+      playerName: r.PlayerName || null,
+      bestDurationMs: r.BestDurationMs,
+      achievedAt: r.AchievedAt || null
+    }));
+  } catch (error) {
+    console.error('Failed to get best match timers:', error);
     throw error;
   }
 }

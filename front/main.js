@@ -1,4 +1,4 @@
-import { ensurePlayer, setPlayerName, getPlayer, onPlayerReady, submitScore, ensurePlayerInBackend } from './src/services/session';
+import { ensurePlayer, setPlayerName, getPlayer, onPlayerReady, submitScore, ensurePlayerInBackend, submitMatch } from './src/services/session';
 
 // Game state and configuration
 class TennisGame {
@@ -969,8 +969,16 @@ class TennisGame {
             this.animationState = 'victory';
             this.animationFrame = 0;
             this.initConfetti();
+            // Stop timer at match end
+            if (this.matchStartTime != null && this.finalMatchTimeMs == null) {
+                this.finalMatchTimeMs = Math.max(0, Math.floor(performance.now() - this.matchStartTime));
+            }
             // submit final score
             this.submitFinalScore();
+            // New: record match duration and difficulty
+            if (this.finalMatchTimeMs != null) {
+                submitMatch(this.finalMatchTimeMs, this.currentDifficulty).catch(() => {});
+            }
         } else if (this.copilotScore >= this.winningScore) {
             // Copilot wins!
             this.gameEnded = true;
@@ -978,8 +986,16 @@ class TennisGame {
             this.gameRunning = false;
             this.animationState = 'defeat';
             this.animationFrame = 0;
+            // Stop timer at match end
+            if (this.matchStartTime != null && this.finalMatchTimeMs == null) {
+                this.finalMatchTimeMs = Math.max(0, Math.floor(performance.now() - this.matchStartTime));
+            }
             // submit final score even on loss
             this.submitFinalScore();
+            // New: record match duration and difficulty
+            if (this.finalMatchTimeMs != null) {
+                submitMatch(this.finalMatchTimeMs, this.currentDifficulty).catch(() => {});
+            }
         }
     }
 
@@ -1076,6 +1092,10 @@ class TennisGame {
     }
 
     finalizeStart() {
+        // Start live timer
+        this.matchStartTime = performance.now();
+        this.finalMatchTimeMs = null;
+
         this.gameStarted = true;
         this.gameRunning = true;
         this.isPaused = false;
@@ -1134,6 +1154,10 @@ class TennisGame {
         }
         this.isCountingDown = false;
         this.countdownText = '';
+        
+        // Clear timer state
+        this.matchStartTime = null;
+        this.finalMatchTimeMs = null;
         
         // Reset ball position and properties
         this.ball.x = this.width / 2 - this.ball.width / 2;
@@ -1411,29 +1435,32 @@ class TennisGame {
     }
     
     draw() {
+        const ctx = this.ctx;
+        ctx.clearRect(0, 0, this.width, this.height);
+        
         // Clear canvas with BNP green background
-        this.ctx.fillStyle = '#00A550';
-        this.ctx.fillRect(0, 0, this.width, this.height);
+        ctx.fillStyle = '#00A550';
+        ctx.fillRect(0, 0, this.width, this.height);
         
         // Apply fade effect for defeat animation
         if (this.animationState === 'defeat') {
-            this.ctx.globalAlpha = this.fadeOpacity;
+            ctx.globalAlpha = this.fadeOpacity;
         }
         
         // Draw court background if available
         if (this.images.court) {
-            this.ctx.drawImage(this.images.court, 0, 0, this.width, this.height);
+            ctx.drawImage(this.images.court, 0, 0, this.width, this.height);
         } else {
             // Fallback: draw court lines for top-down view
-            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-            this.ctx.lineWidth = 2;
-            this.ctx.setLineDash([10, 10]);
-            this.ctx.beginPath();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 10]);
+            ctx.beginPath();
             // Horizontal center line (net)
-            this.ctx.moveTo(0, this.height / 2);
-            this.ctx.lineTo(this.width, this.height / 2);
-            this.ctx.stroke();
-            this.ctx.setLineDash([]);
+            ctx.moveTo(0, this.height / 2);
+            ctx.lineTo(this.width, this.height / 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
         }
         
         // NEW: Draw Copilot sprite BEFORE the top paddle so it appears just behind it
@@ -1477,45 +1504,45 @@ class TennisGame {
         
         // Draw paddles as colored bars (top-down view)
         // Copilot paddle (top) - Blue
-        this.ctx.fillStyle = '#3498db';
-        this.ctx.fillRect(this.paddle1.x, this.paddle1.y, this.paddle1.width, this.paddle1.height);
+        ctx.fillStyle = '#3498db';
+        ctx.fillRect(this.paddle1.x, this.paddle1.y, this.paddle1.width, this.paddle1.height);
         
         // Player paddle (bottom) - Green
-        this.ctx.fillStyle = '#2ecc71';
-        this.ctx.fillRect(this.paddle2.x, this.paddle2.y, this.paddle2.width, this.paddle2.height);
+        ctx.fillStyle = '#2ecc71';
+        ctx.fillRect(this.paddle2.x, this.paddle2.y, this.paddle2.width, this.paddle2.height);
         
         // Draw simple 2D ball
         if (this.images.ball) {
-            this.ctx.drawImage(this.images.ball, this.ball.x, this.ball.y, this.ball.width, this.ball.height);
+            ctx.drawImage(this.images.ball, this.ball.x, this.ball.y, this.ball.width, this.ball.height);
         } else {
             // Fallback: simple yellow circle
             const centerX = this.ball.x + this.ball.width / 2;
             const centerY = this.ball.y + this.ball.height / 2;
             
-            this.ctx.fillStyle = '#FFFF00';
-            this.ctx.beginPath();
-            this.ctx.arc(centerX, centerY, this.ball.width / 2, 0, 2 * Math.PI);
-            this.ctx.fill();
+            ctx.fillStyle = '#FFFF00';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, this.ball.width / 2, 0, 2 * Math.PI);
+            ctx.fill();
             
             // Add a white highlight
-            this.ctx.fillStyle = '#FFFFFF';
-            this.ctx.beginPath();
-            this.ctx.arc(centerX - 4, centerY - 4, 4, 0, 2 * Math.PI);
-            this.ctx.fill();
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(centerX - 4, centerY - 4, 4, 0, 2 * Math.PI);
+            ctx.fill();
         }
         
         // Draw net (visual only - horizontal line with some 3D effect)
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        this.ctx.fillRect(0, this.netPosition - 2, this.width, 4);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.fillRect(0, this.netPosition - 2, this.width, 4);
         
         // Net posts
-        this.ctx.fillStyle = 'rgba(200, 200, 200, 0.9)';
-        this.ctx.fillRect(-5, this.netPosition - this.netHeight, 10, this.netHeight + 4);
-        this.ctx.fillRect(this.width - 5, this.netPosition - this.netHeight, 10, this.netHeight + 4);
+        ctx.fillStyle = 'rgba(200, 200, 200, 0.9)';
+        ctx.fillRect(-5, this.netPosition - this.netHeight, 10, this.netHeight + 4);
+        ctx.fillRect(this.width - 5, this.netPosition - this.netHeight, 10, this.netHeight + 4);
         
         // Draw player sprite LAST (in the foreground - z-index: 1000 equivalent)
         // Allow sprite to be drawn even if it extends beyond canvas bounds
-        this.ctx.save(); // Save current clipping state
+        ctx.save(); // Save current clipping state
         
         // Choose sprite based on player horizontal position (right half uses right-facing sprite)
         const playerCenterX = this.paddle2.x + this.paddle2.width / 2;
@@ -1523,7 +1550,7 @@ class TennisGame {
         const chosenSprite = onRightSide && this.images.playerBackRight ? this.images.playerBackRight : this.images.playerBack;
         
         if (chosenSprite) {
-            this.ctx.drawImage(
+            ctx.drawImage(
                 chosenSprite,
                 this.playerSprite.x,
                 this.playerSprite.y,
@@ -1532,40 +1559,40 @@ class TennisGame {
             );
         } else {
             // Fallback: draw a large bright colored rectangle to show where player should be
-            this.ctx.fillStyle = '#FF0000';
-            this.ctx.fillRect(this.playerSprite.x, this.playerSprite.y, this.playerSprite.width, this.playerSprite.height);
+            ctx.fillStyle = '#FF0000';
+            ctx.fillRect(this.playerSprite.x, this.playerSprite.y, this.playerSprite.width, this.playerSprite.height);
             
             // Add a border to make it even more visible
-            this.ctx.strokeStyle = '#FFFFFF';
-            this.ctx.lineWidth = 2;
-            this.ctx.strokeRect(this.playerSprite.x, this.playerSprite.y, this.playerSprite.width, this.playerSprite.height);
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(this.playerSprite.x, this.playerSprite.y, this.playerSprite.width, this.playerSprite.height);
         }
         
-        this.ctx.restore(); // Restore clipping state
+        ctx.restore(); // Restore clipping state
         
         // Reset alpha for overlays
-        this.ctx.globalAlpha = 1;
+        ctx.globalAlpha = 1;
         
         // Countdown overlay
         if (this.isCountingDown) {
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
-            this.ctx.fillRect(0, 0, this.width, this.height);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+            ctx.fillRect(0, 0, this.width, this.height);
 
             // Style GO! differently
             if (this.countdownText === 'GO!') {
-                this.ctx.fillStyle = '#00FF88';
-                this.ctx.font = 'bold 64px Courier New';
-                this.ctx.textAlign = 'center';
-                this.ctx.fillText('GO!', this.width / 2, this.height / 2);
+                ctx.fillStyle = '#00FF88';
+                ctx.font = 'bold 64px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText('GO!', this.width / 2, this.height / 2);
             } else {
-                this.ctx.fillStyle = '#ffffff';
-                this.ctx.font = 'bold 72px Courier New';
-                this.ctx.textAlign = 'center';
-                this.ctx.fillText(this.countdownText, this.width / 2, this.height / 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 72px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText(this.countdownText, this.width / 2, this.height / 2);
                 
-                this.ctx.font = '20px Courier New';
-                this.ctx.fillStyle = '#FFD700';
-                this.ctx.fillText('Get Ready', this.width / 2, this.height / 2 + 40);
+                ctx.font = '20px Courier New';
+                ctx.fillStyle = '#FFD700';
+                ctx.fillText('Get Ready', this.width / 2, this.height / 2 + 40);
             }
             return;
         }
@@ -1577,64 +1604,80 @@ class TennisGame {
         
         // Draw game state overlays
         if (this.gameEnded) {
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-            this.ctx.fillRect(0, 0, this.width, this.height);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            ctx.fillRect(0, 0, this.width, this.height);
             
             if (this.winner === 'player') {
                 // Victory animation
                 const flashIntensity = Math.sin(this.animationFrame * 0.3) * 0.3 + 0.7;
-                this.ctx.fillStyle = `rgba(255, 215, 0, ${flashIntensity})`;
-                this.ctx.font = 'bold 64px Courier New';
-                this.ctx.textAlign = 'center';
-                this.ctx.strokeStyle = '#000';
-                this.ctx.lineWidth = 3;
-                this.ctx.strokeText('🎉 YOU WIN! 🎉', this.width / 2, this.height / 2 - 30);
-                this.ctx.fillText('🎉 YOU WIN! 🎉', this.width / 2, this.height / 2 - 30);
+                ctx.fillStyle = `rgba(255, 215, 0, ${flashIntensity})`;
+                ctx.font = 'bold 64px Courier New';
+                ctx.textAlign = 'center';
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 3;
+                ctx.strokeText('🎉 YOU WIN! 🎉', this.width / 2, this.height / 2 - 30);
+                ctx.fillText('🎉 YOU WIN! 🎉', this.width / 2, this.height / 2 - 30);
                 
-                this.ctx.fillStyle = '#ffffff';
-                this.ctx.font = '24px Courier New';
-                this.ctx.fillText(`Final Score: ${this.playerName} ${this.playerScore} - ${this.copilotScore} Copilot`, this.width / 2, this.height / 2 + 30);
-                this.ctx.fillText('Click New Game to play again!', this.width / 2, this.height / 2 + 70);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '24px Courier New';
+                ctx.fillText(`Final Score: ${this.playerName} ${this.playerScore} - ${this.copilotScore} Copilot`, this.width / 2, this.height / 2 + 30);
+                ctx.fillText('Click New Game to play again!', this.width / 2, this.height / 2 + 70);
             } else {
                 // Defeat animation
-                this.ctx.fillStyle = '#ff6b6b';
-                this.ctx.font = 'bold 48px Courier New';
-                this.ctx.textAlign = 'center';
-                this.ctx.fillText('😔 GAME OVER 😔', this.width / 2, this.height / 2 - 30);
+                ctx.fillStyle = '#ff6b6b';
+                ctx.font = 'bold 48px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText('😔 GAME OVER 😔', this.width / 2, this.height / 2 - 30);
                 
-                this.ctx.fillStyle = '#ffffff';
-                this.ctx.font = '24px Courier New';
-                this.ctx.fillText(`Final Score: Copilot ${this.copilotScore} - ${this.playerScore} ${this.playerName}`, this.width / 2, this.height / 2 + 20);
-                this.ctx.fillText('Better luck next time!', this.width / 2, this.height / 2 + 50);
-                this.ctx.fillText('Click New Game to try again!', this.width / 2, this.height / 2 + 80);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '24px Courier New';
+                ctx.fillText(`Final Score: Copilot ${this.copilotScore} - ${this.playerScore} ${this.playerName}`, this.width / 2, this.height / 2 + 20);
+                ctx.fillText('Better luck next time!', this.width / 2, this.height / 2 + 50);
+                ctx.fillText('Click New Game to try again!', this.width / 2, this.height / 2 + 80);
             }
         } else if (!this.gameStarted) {
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            this.ctx.fillRect(0, 0, this.width, this.height);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, this.width, this.height);
             
-            this.ctx.fillStyle = '#ffffff';
-            this.ctx.font = 'bold 48px Courier New';
-            this.ctx.textAlign = 'center';
-            this.ctx.fillText('PRESS START', this.width / 2, this.height / 2 - 40);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 48px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText('PRESS START', this.width / 2, this.height / 2 - 40);
             
-            this.ctx.font = '20px Courier New';
-            this.ctx.fillText('Click here, press SPACEBAR, or use Start button', this.width / 2, this.height / 2 - 10);
+            ctx.font = '20px Courier New';
+            ctx.fillText('Click here, press SPACEBAR, or use Start button', this.width / 2, this.height / 2 - 10);
             
-            this.ctx.font = 'bold 24px Courier New';
-            this.ctx.fillStyle = '#FFD700';
-            this.ctx.fillText(`🏆 First to ${this.winningScore} points wins! 🏆`, this.width / 2, this.height / 2 + 30);
+            ctx.font = 'bold 24px Courier New';
+            ctx.fillStyle = '#FFD700';
+            ctx.fillText(`🏆 First to ${this.winningScore} points wins! 🏆`, this.width / 2, this.height / 2 + 30);
         } else if (this.isPaused) {
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            this.ctx.fillRect(0, 0, this.width, this.height);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, this.width, this.height);
             
-            this.ctx.fillStyle = '#ffffff';
-            this.ctx.font = 'bold 48px Courier New';
-            this.ctx.textAlign = 'center';
-            this.ctx.fillText('PAUSED', this.width / 2, this.height / 2 - 20);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 48px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText('PAUSED', this.width / 2, this.height / 2 - 20);
             
-            this.ctx.font = '20px Courier New';
-            this.ctx.fillText('Click here, press SPACEBAR, or use Resume button', this.width / 2, this.height / 2 + 30);
+            ctx.font = '20px Courier New';
+            ctx.fillText('Click here, press SPACEBAR, or use Resume button', this.width / 2, this.height / 2 + 30);
         }
+        
+        // Update header timer element each frame
+        this.updateHeaderTimer();
+    }
+    
+    updateHeaderTimer() {
+        const el = document.getElementById('match-timer');
+        if (!el) return;
+        let ms = this.finalMatchTimeMs != null
+            ? this.finalMatchTimeMs
+            : (this.matchStartTime != null ? (performance.now() - this.matchStartTime) : 0);
+        const totalMs = Math.max(0, Math.floor(ms));
+        const minutes = Math.floor(totalMs / 60000);
+        const seconds = Math.floor((totalMs % 60000) / 1000);
+        const millis = totalMs % 1000;
+        el.textContent = `${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}.${String(millis).padStart(3,'0')}`;
     }
     
     updateScoreDisplay() {

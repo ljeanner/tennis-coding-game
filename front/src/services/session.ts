@@ -169,6 +169,19 @@ async function apiSubmitScore(playerId: string, score: number): Promise<Player> 
   return await response.json();
 }
 
+// New: record a finished match with duration and difficulty
+async function apiRecordMatch(playerId: string, difficulty: string, durationMs: number): Promise<any> {
+  const response = await fetch(`${getApiBaseUrl()}/matches`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ playerId, difficulty, durationMs })
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to record match: ${response.statusText}`);
+  }
+  return await response.json();
+}
+
 export async function getLeaderboard(limit: number = 10): Promise<Player[]> {
   try {
     const response = await fetch(`${getApiBaseUrl()}/leaderboard?limit=${limit}`);
@@ -288,6 +301,25 @@ export async function submitScore(score: number): Promise<Player | null> {
     return updatedPlayer;
   } catch (error) {
     console.warn('Failed to submit score to backend:', error);
+    return null;
+  }
+}
+
+// New: public helper to submit a match record
+export async function submitMatch(durationMs: number, difficulty: string): Promise<any | null> {
+  const player = getPlayer();
+  if (!player.playerId) {
+    console.warn('Cannot record match: no player registered');
+    return null;
+  }
+  if (typeof durationMs !== 'number' || durationMs <= 0) {
+    console.warn('Cannot record match: invalid durationMs');
+    return null;
+  }
+  try {
+    return await apiRecordMatch(player.playerId, difficulty || 'beginner', Math.floor(durationMs));
+  } catch (error) {
+    console.warn('Failed to record match to backend:', error);
     return null;
   }
 }

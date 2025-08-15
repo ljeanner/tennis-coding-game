@@ -99,6 +99,17 @@ body {
     margin-bottom: 15px;
 }
 
+.match-timer {
+    margin-left: 10px;
+    padding: 2px 8px;
+    background: #222;
+    color: #fff;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
 .score-separator {
     margin: 0 15px;
     color: #666;
@@ -119,6 +130,7 @@ body {
     border: 40px solid #d36c24;
     border-radius: 8px;
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    image-rendering: -webkit-optimize-contrast; /* Edge compatibility */
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
     image-rendering: crisp-edges;

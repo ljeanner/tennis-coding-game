@@ -151,8 +151,8 @@ class TennisGame {
         
         // Player sprite (attached to paddle2)
         this.playerSprite = {
-            width: 50,
-            height: 70,
+            width: 90,
+            height: 120,
             offsetY: 5, // Offset below paddle
             offsetX: 0, // Additional horizontal offset for border movement
             x: this.width / 2 - 20, // Will be updated to follow paddle
@@ -160,8 +160,8 @@ class TennisGame {
         };
         // NEW: Copilot sprite (attached to paddle1)
         this.copilotSprite = {
-            width: 50,
-            height: 70,
+            width: 90,
+            height: 120,
             offsetY: 6, // Place just above the paddle; will clamp to 0
             offsetX: 0,
             x: this.width / 2 - 25,
